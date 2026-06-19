@@ -1,0 +1,97 @@
+<div class="ntf-page">
+
+  <!-- ── HEADER ── -->
+  <header class="ntf-header">
+    <div class="ntf-header-top">
+      <div class="ntf-header-title-row">
+        <h1 class="ntf-title">{{ L.pageTitle }}</h1>
+        @if (unreadCount() > 0) {
+          <span class="ntf-badge">{{ L.unreadBadge(unreadCount()) }}</span>
+        }
+      </div>
+      <div class="ntf-header-actions">
+        <button class="ntf-lang-btn" (click)="toggleLanguage()">
+          {{ language() === 'fr' ? 'EN' : 'FR' }}
+        </button>
+        @if (unreadCount() > 0) {
+          <button class="ntf-mark-all-btn" (click)="markAllRead()">
+            <lucide-icon name="check-check" [size]="15" aria-hidden="true"></lucide-icon>
+            {{ L.markAll }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="ntf-tabs" role="tablist">
+      @for (tab of tabs; track tab) {
+        <button
+          class="ntf-tab"
+          [class.ntf-tab--active]="activeTab() === tab"
+          role="tab"
+          [attr.aria-selected]="activeTab() === tab"
+          (click)="setTab(tab)"
+        >{{ tabLabel(tab) }}</button>
+      }
+    </div>
+  </header>
+
+  <!-- ── LIST ── -->
+  <main class="ntf-main">
+    @if (filtered().length === 0) {
+
+      <!-- Empty state -->
+      <div class="ntf-empty">
+        <div class="ntf-empty-icon">
+          <lucide-icon name="inbox" [size]="40" aria-hidden="true"></lucide-icon>
+        </div>
+        <p class="ntf-empty-title">{{ L.emptyTitle }}</p>
+        <p class="ntf-empty-body">{{ L.emptyBody }}</p>
+      </div>
+
+    } @else {
+
+      <ul class="ntf-list" role="list">
+        @for (notif of filtered(); track notif.id) {
+          <li
+            class="ntf-item"
+            [class.ntf-item--unread]="!notif.read"
+            (click)="markRead(notif.id)"
+            role="button"
+            [attr.aria-label]="title(notif)"
+          >
+            <!-- Icon -->
+            <span class="ntf-icon-wrap" [class]="typeClass(notif.type)">
+              <lucide-icon [name]="iconName(notif.type)" [size]="20" aria-hidden="true"></lucide-icon>
+            </span>
+
+            <!-- Content -->
+            <div class="ntf-content">
+              <div class="ntf-content-top">
+                <span class="ntf-item-title">{{ title(notif) }}</span>
+                <span class="ntf-time">{{ relativeTime(notif.timestamp) }}</span>
+              </div>
+              <p class="ntf-item-body">{{ body(notif) }}</p>
+            </div>
+
+            <!-- Right side: unread dot + dismiss -->
+            <div class="ntf-item-aside">
+              @if (!notif.read) {
+                <span class="ntf-unread-dot" aria-label="Unread"></span>
+              }
+              <button
+                class="ntf-dismiss-btn"
+                (click)="$event.stopPropagation(); dismiss(notif.id)"
+                aria-label="Dismiss"
+              >
+                <lucide-icon name="x" [size]="14" aria-hidden="true"></lucide-icon>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+
+    }
+  </main>
+
+</div>

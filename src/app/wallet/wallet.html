@@ -1,0 +1,708 @@
+<!-- ═══════════════════════════════════════════════════════════
+     WALLET PAGE  ·  Djangi Management System
+     ═══════════════════════════════════════════════════════════ -->
+<div class="wlt-page">
+
+  <!-- ── HERO BALANCE CARD ──────────────────────────────────────────────── -->
+  <section class="wlt-hero" aria-label="Solde du portefeuille">
+    <button
+      class="wlt-hero__eye"
+      (click)="toggleBalance()"
+      [attr.aria-label]="balanceVisible() ? 'Masquer le solde' : 'Afficher le solde'"
+    >
+      <lucide-icon [name]="balanceVisible() ? 'eye' : 'eye-off'" [size]="20" color="rgba(255,255,255,0.75)"></lucide-icon>
+    </button>
+
+    <p class="wlt-hero__label">{{ labels().totalBalance }}</p>
+
+    <div class="wlt-hero__balance" aria-live="polite">
+      @if (balanceVisible()) {
+        <span class="wlt-hero__amount">{{ formattedBalance() }}</span>
+      } @else {
+        <button class="wlt-hero__amount wlt-hero__amount--hidden" (click)="toggleBalance()" aria-label="Afficher le solde">
+          <lucide-icon name="lock" [size]="16" color="rgba(255,255,255,0.5)"></lucide-icon>
+          ••••••&nbsp;FCFA
+        </button>
+      }
+    </div>
+
+    <div class="wlt-hero__chips">
+      <span class="wlt-chip wlt-chip--green">
+        <lucide-icon name="trending-up" [size]="12"></lucide-icon>
+        {{ formattedDelta() }} {{ labels().thisMonth }}
+      </span>
+      <span class="wlt-chip wlt-chip--ghost">
+        <lucide-icon name="users" [size]="12"></lucide-icon>
+        {{ activeGroups() }}&nbsp;{{ labels().activeGroups }}
+      </span>
+    </div>
+
+    <div class="wlt-hero__ring" aria-hidden="true"></div>
+    <div class="wlt-hero__ring wlt-hero__ring--2" aria-hidden="true"></div>
+  </section>
+
+  <!-- ── QUICK ACTIONS ──────────────────────────────────────────────────── -->
+  <section class="wlt-actions" aria-label="Actions rapides">
+    @for (action of quickActions(); track action.action) {
+      <button class="wlt-action-btn" (click)="onAction(action.action)" [attr.aria-label]="action.label">
+        <span class="wlt-action-btn__icon">
+          <lucide-icon [name]="action.icon" [size]="22" color="#1B3A2D"></lucide-icon>
+        </span>
+        <span class="wlt-action-btn__label">{{ action.label }}</span>
+      </button>
+    }
+  </section>
+
+  <!-- ── CONTENT ─────────────────────────────────────────────────────────── -->
+  <div class="wlt-content">
+
+    <div class="wlt-col wlt-col--left">
+      <section class="wlt-section" aria-label="Mes groupes">
+        <div class="wlt-section__head">
+          <h2 class="wlt-section__title">{{ labels().myGroups }}</h2>
+          <button class="wlt-see-all">
+            {{ labels().seeAll }}
+            <lucide-icon name="chevron-right" [size]="14" color="#1B3A2D"></lucide-icon>
+          </button>
+        </div>
+        <div class="wlt-groups-track" role="list">
+          @for (group of groups(); track group.id) {
+            <article class="wlt-group-card" role="listitem">
+              <div class="wlt-group-card__accent" [style.background]="group.avatarColor" aria-hidden="true"></div>
+              <div class="wlt-group-card__body">
+                <h3 class="wlt-group-card__name">{{ group.name }}</h3>
+                <span class="wlt-status-chip wlt-status-chip--{{ group.status }}">
+                  @if (group.status === 'paid')    { {{ labels().paid }}    }
+                  @if (group.status === 'pending') { {{ labels().pending }} }
+                  @if (group.status === 'late')    { {{ labels().late }}    }
+                </span>
+                <p class="wlt-group-card__meta">{{ labels().nextContrib }}</p>
+                <p class="wlt-group-card__amount">{{ formatAmount(group.nextAmount) }}</p>
+                <p class="wlt-group-card__due">{{ formatDueDate(group.dueDate) }}</p>
+                <div class="wlt-progress" aria-hidden="true">
+                  <div class="wlt-progress__fill" [style.width.%]="progressPercent(group)"></div>
+                </div>
+                <p class="wlt-group-card__rotation">{{ group.rotationIndex }}/{{ group.rotationTotal }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    </div>
+
+    <div class="wlt-col wlt-col--right">
+      <section class="wlt-section" aria-label="Transactions récentes">
+        <div class="wlt-section__head">
+          <h2 class="wlt-section__title">{{ labels().recentTransactions }}</h2>
+          <button class="wlt-see-all" (click)="onAction('history')">
+            {{ labels().seeAll }}
+            <lucide-icon name="chevron-right" [size]="14" color="#1B3A2D"></lucide-icon>
+          </button>
+        </div>
+        <div class="wlt-tx-card">
+          @for (tx of transactions().slice(0, 5); track tx.id; let last = $last) {
+            <div class="wlt-tx-row">
+              <span class="wlt-tx-row__icon"
+                [class.wlt-tx-row__icon--credit]="tx.amount > 0"
+                [class.wlt-tx-row__icon--debit]="tx.amount < 0"
+                aria-hidden="true">
+                <lucide-icon [name]="tx.amount > 0 ? 'arrow-down-circle' : 'arrow-up-circle'" [size]="18"></lucide-icon>
+              </span>
+              <div class="wlt-tx-row__info">
+                <span class="wlt-tx-row__label">{{ txLabel(tx) }}</span>
+                @if (tx.groupName) { <span class="wlt-tx-row__group">{{ tx.groupName }}</span> }
+                <span class="wlt-tx-row__date">{{ txDate(tx.date) }}</span>
+              </div>
+              <span class="wlt-tx-row__amount"
+                [class.wlt-tx-row__amount--credit]="tx.amount > 0"
+                [class.wlt-tx-row__amount--debit]="tx.amount < 0">
+                {{ tx.amount > 0 ? '+' : '-' }}{{ formatAmount(tx.amount) }}
+              </span>
+            </div>
+            @if (!last) { <div class="wlt-tx-divider" aria-hidden="true"></div> }
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="wlt-safe-area" aria-hidden="true"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PIN MODAL — Balance reveal
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'pin') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" aria-label="Code PIN">
+    <div class="wlt-modal wlt-modal--pin">
+      <div class="wlt-modal__header">
+        <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+          <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+        </button>
+        <div class="wlt-modal__header-icon" style="background:#1B3A2D">
+          <lucide-icon name="lock" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().pinTitle }}</h2>
+          <p class="wlt-modal__subtitle">{{ labels().pinSubtitle }}</p>
+        </div>
+      </div>
+
+      <div class="wlt-modal__body wlt-modal__body--pin">
+        <div class="wlt-pin-dots">
+          @for (i of [0,1,2,3]; track i) {
+            <div class="wlt-pin-dot" [class.wlt-pin-dot--filled]="pinInput().length > i"></div>
+          }
+        </div>
+
+        @if (pinError()) {
+          <p class="wlt-pin-error">
+            <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+            {{ pinError() }}
+          </p>
+        }
+
+        <!-- PIN numpad -->
+        <div class="wlt-numpad">
+          @for (key of [1,2,3,4,5,6,7,8,9,'',0,'⌫']; track key) {
+            @if (key === '') {
+              <div class="wlt-numpad-spacer"></div>
+            } @else if (key === '⌫') {
+              <button class="wlt-numpad-key wlt-numpad-key--del"
+                (click)="pinInput.set(pinInput().slice(0,-1)); pinError.set('')"
+                aria-label="Supprimer">⌫</button>
+            } @else {
+              <button class="wlt-numpad-key"
+                (click)="pinInput.set((pinInput() + key).slice(0,4)); pinError.set(''); pinInput().length === 3 && (pinInput() + key).length === 4 ? submitPin() : null"
+                [disabled]="pinInput().length >= 4">
+                {{ key }}
+              </button>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="wlt-modal__footer wlt-modal__footer--center">
+        <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
+        <button class="wlt-btn wlt-btn--primary" (click)="submitPin()" [disabled]="pinInput().length < 4">
+          {{ labels().pinConfirm }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DEPOSIT MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'deposit') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="labels().depositTitle">
+    <div class="wlt-modal">
+      <div class="wlt-modal__header">
+        @if (modalStep() === 'confirm') {
+          <button class="wlt-modal__back" (click)="backToForm()" aria-label="Retour">
+            <lucide-icon name="arrow-left" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        } @else if (modalStep() !== 'success') {
+          <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+            <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        }
+        <div class="wlt-modal__header-icon wlt-modal__header-icon--green">
+          <lucide-icon name="arrow-down-circle" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().depositTitle }}</h2>
+          <p class="wlt-modal__subtitle">{{ labels().depositSubtitle }}</p>
+        </div>
+      </div>
+
+      @if (modalStep() === 'form') {
+        <div class="wlt-modal__body">
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">{{ labels().quickAmounts }}</label>
+            <div class="wlt-quick-amounts">
+              @for (amt of quickAmounts; track amt) {
+                <button class="wlt-quick-amt" [class.wlt-quick-amt--active]="parsedDepositAmount() === amt" (click)="setQuickAmount(amt, 'deposit')">
+                  {{ amt.toLocaleString('fr-FR') }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="dep-amount">{{ labels().depositAmount }}</label>
+            <div class="wlt-amount-input-wrap">
+              <input id="dep-amount" class="wlt-amount-input" type="text" inputmode="numeric"
+                [value]="depositAmountDisplay()" (input)="onDepositAmountInput($event)"
+                placeholder="0" [class.wlt-amount-input--error]="formError()" autocomplete="off"/>
+              <span class="wlt-amount-input__currency">FCFA</span>
+            </div>
+            @if (formError()) {
+              <p class="wlt-form-error"><lucide-icon name="circle-alert" [size]="13"></lucide-icon> {{ formError() }}</p>
+            } @else {
+              <p class="wlt-form-hint">{{ labels().depositAmountHint }}</p>
+            }
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">{{ labels().depositMethod }}</label>
+            <div class="wlt-method-grid">
+              @for (method of depositMethods(); track method.value) {
+                <button class="wlt-method-btn" [class.wlt-method-btn--active]="depositMethod() === method.value" (click)="depositMethod.set(method.value)">
+                  <span class="wlt-method-btn__dot"></span>
+                  <span class="wlt-method-btn__label">{{ method.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="dep-note">{{ labels().depositNote }}</label>
+            <textarea id="dep-note" class="wlt-textarea" rows="2" [placeholder]="labels().depositNotePlaceholder"
+              [value]="depositNote()" (input)="depositNote.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--primary" (click)="submitDeposit()">
+            {{ labels().depositConfirm }}
+            <lucide-icon name="arrow-right" [size]="16" color="#fff"></lucide-icon>
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'confirm') {
+        <div class="wlt-modal__body">
+          <div class="wlt-confirm-summary">
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Montant</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--big">{{ parsedDepositAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">{{ labels().depositMethod }}</span>
+              <span class="wlt-confirm-row__value">{{ selectedDepositMethodLabel }}</span>
+            </div>
+            @if (depositNote()) {
+              <div class="wlt-confirm-divider"></div>
+              <div class="wlt-confirm-row">
+                <span class="wlt-confirm-row__label">Note</span>
+                <span class="wlt-confirm-row__value">{{ depositNote() }}</span>
+              </div>
+            }
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Nouveau solde estimé</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--green">{{ (balance() + parsedDepositAmount()).toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--primary" (click)="confirmDeposit()" [disabled]="isProcessing()">
+            @if (isProcessing()) { <span class="wlt-spinner"></span> {{ labels().processing }} }
+            @else { {{ labels().depositConfirm }} }
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'success') {
+        <div class="wlt-modal__body wlt-modal__body--success">
+          <div class="wlt-success-icon">
+            <lucide-icon name="circle-check" [size]="48" color="#4A7C59"></lucide-icon>
+          </div>
+          <h3 class="wlt-success-title">{{ labels().depositSuccess }}</h3>
+          <p class="wlt-success-amount">+{{ parsedDepositAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</p>
+          <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
+        </div>
+        <div class="wlt-modal__footer wlt-modal__footer--center">
+          <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
+            <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
+            {{ labels().downloadReceipt }}
+          </button>
+          <button class="wlt-btn wlt-btn--primary" (click)="closeModal()">{{ labels().close }}</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     WITHDRAW MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'withdraw') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="labels().withdrawTitle">
+    <div class="wlt-modal">
+      <div class="wlt-modal__header">
+        @if (modalStep() === 'confirm') {
+          <button class="wlt-modal__back" (click)="backToForm()" aria-label="Retour">
+            <lucide-icon name="arrow-left" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        } @else if (modalStep() !== 'success') {
+          <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+            <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        }
+        <div class="wlt-modal__header-icon wlt-modal__header-icon--red">
+          <lucide-icon name="arrow-up-circle" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().withdrawTitle }}</h2>
+          <p class="wlt-modal__subtitle">{{ labels().withdrawSubtitle }}</p>
+        </div>
+      </div>
+
+      @if (modalStep() === 'form') {
+        <div class="wlt-modal__body">
+          <div class="wlt-balance-pill">
+            <lucide-icon name="wallet" [size]="14" color="#4A7C59"></lucide-icon>
+            {{ labels().withdrawAmountHint }}&nbsp;<strong>{{ formattedBalance() }}</strong>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">{{ labels().quickAmounts }}</label>
+            <div class="wlt-quick-amounts">
+              @for (amt of quickAmounts; track amt) {
+                <button class="wlt-quick-amt" [class.wlt-quick-amt--active]="parsedWithdrawAmount() === amt"
+                  [class.wlt-quick-amt--disabled]="amt > balance()" [disabled]="amt > balance()"
+                  (click)="setQuickAmount(amt, 'withdraw')">{{ amt.toLocaleString('fr-FR') }}</button>
+              }
+            </div>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="wd-amount">{{ labels().withdrawAmount }}</label>
+            <div class="wlt-amount-input-wrap">
+              <input id="wd-amount" class="wlt-amount-input" type="text" inputmode="numeric"
+                [value]="withdrawAmountDisplay()" (input)="onWithdrawAmountInput($event)"
+                placeholder="0" [class.wlt-amount-input--error]="formError()" autocomplete="off"/>
+              <span class="wlt-amount-input__currency">FCFA</span>
+            </div>
+            @if (formError()) {
+              <p class="wlt-form-error"><lucide-icon name="circle-alert" [size]="13"></lucide-icon> {{ formError() }}</p>
+            }
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">{{ labels().withdrawDestination }}</label>
+            <div class="wlt-method-grid">
+              @for (dest of withdrawDests(); track dest.value) {
+                <button class="wlt-method-btn" [class.wlt-method-btn--active]="withdrawDest() === dest.value" (click)="withdrawDest.set(dest.value)">
+                  <span class="wlt-method-btn__dot"></span>
+                  <span class="wlt-method-btn__label">{{ dest.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="wd-phone">{{ labels().withdrawPhone }}</label>
+            <div class="wlt-phone-input-wrap">
+              <span class="wlt-phone-input__prefix">+237</span>
+              <input id="wd-phone" class="wlt-phone-input" type="tel" inputmode="numeric"
+                [placeholder]="labels().withdrawPhonePh" [value]="withdrawPhone()"
+                (input)="withdrawPhone.set($any($event.target).value)" maxlength="9" autocomplete="tel"/>
+            </div>
+          </div>
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="wd-note">{{ labels().withdrawNote }}</label>
+            <textarea id="wd-note" class="wlt-textarea" rows="2" [placeholder]="labels().withdrawNotePh"
+              [value]="withdrawNote()" (input)="withdrawNote.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--danger" (click)="submitWithdraw()">
+            {{ labels().withdrawConfirm }}
+            <lucide-icon name="arrow-right" [size]="16" color="#fff"></lucide-icon>
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'confirm') {
+        <div class="wlt-modal__body">
+          <div class="wlt-confirm-summary">
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Montant</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--big wlt-confirm-row__value--red">-{{ parsedWithdrawAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">{{ labels().withdrawDestination }}</span>
+              <span class="wlt-confirm-row__value">{{ selectedWithdrawDestLabel }}</span>
+            </div>
+            @if (withdrawPhone()) {
+              <div class="wlt-confirm-divider"></div>
+              <div class="wlt-confirm-row">
+                <span class="wlt-confirm-row__label">{{ labels().withdrawPhone }}</span>
+                <span class="wlt-confirm-row__value">+237 {{ withdrawPhone() }}</span>
+              </div>
+            }
+            @if (withdrawNote()) {
+              <div class="wlt-confirm-divider"></div>
+              <div class="wlt-confirm-row">
+                <span class="wlt-confirm-row__label">Motif</span>
+                <span class="wlt-confirm-row__value">{{ withdrawNote() }}</span>
+              </div>
+            }
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Solde restant</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--green">{{ (balance() - parsedWithdrawAmount()).toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--danger" (click)="confirmWithdraw()" [disabled]="isProcessing()">
+            @if (isProcessing()) { <span class="wlt-spinner wlt-spinner--white"></span> {{ labels().processing }} }
+            @else { {{ labels().withdrawConfirm }} }
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'success') {
+        <div class="wlt-modal__body wlt-modal__body--success">
+          <div class="wlt-success-icon">
+            <lucide-icon name="circle-check" [size]="48" color="#4A7C59"></lucide-icon>
+          </div>
+          <h3 class="wlt-success-title">{{ labels().withdrawSuccess }}</h3>
+          <p class="wlt-success-amount wlt-success-amount--debit">-{{ parsedWithdrawAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</p>
+          <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
+        </div>
+        <div class="wlt-modal__footer wlt-modal__footer--center">
+          <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
+            <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
+            {{ labels().downloadReceipt }}
+          </button>
+          <button class="wlt-btn wlt-btn--primary" (click)="closeModal()">{{ labels().close }}</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TRANSFER MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'transfer') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="labels().transferTitle">
+    <div class="wlt-modal">
+      <div class="wlt-modal__header">
+        @if (modalStep() === 'confirm') {
+          <button class="wlt-modal__back" (click)="backToForm()" aria-label="Retour">
+            <lucide-icon name="arrow-left" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        } @else if (modalStep() !== 'success') {
+          <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+            <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+        }
+        <div class="wlt-modal__header-icon" style="background:#C9A84C">
+          <lucide-icon name="send" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().transferTitle }}</h2>
+          <p class="wlt-modal__subtitle">{{ labels().transferSubtitle }}</p>
+        </div>
+      </div>
+
+      @if (modalStep() === 'form') {
+        <div class="wlt-modal__body">
+          <div class="wlt-balance-pill">
+            <lucide-icon name="wallet" [size]="14" color="#4A7C59"></lucide-icon>
+            {{ labels().withdrawAmountHint }}&nbsp;<strong>{{ formattedBalance() }}</strong>
+          </div>
+
+          <!-- Recipient -->
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="tf-recipient">{{ labels().transferRecipient }}</label>
+            <div class="wlt-phone-input-wrap">
+              <span class="wlt-phone-input__prefix">+237</span>
+              <input id="tf-recipient" class="wlt-phone-input" type="tel" inputmode="numeric"
+                [placeholder]="labels().transferRecipientPh" [value]="transferRecipient()"
+                (input)="transferRecipient.set($any($event.target).value)" maxlength="9" autocomplete="tel"/>
+            </div>
+          </div>
+
+          <!-- Network -->
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">Réseau</label>
+            <div class="wlt-method-grid">
+              @for (dest of transferDests(); track dest.value) {
+                <button class="wlt-method-btn" [class.wlt-method-btn--active]="transferDest() === dest.value" (click)="transferDest.set(dest.value)">
+                  <span class="wlt-method-btn__dot"></span>
+                  <span class="wlt-method-btn__label">{{ dest.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Quick amounts -->
+          <div class="wlt-form-group">
+            <label class="wlt-form-label">{{ labels().quickAmounts }}</label>
+            <div class="wlt-quick-amounts">
+              @for (amt of quickAmounts; track amt) {
+                <button class="wlt-quick-amt" [class.wlt-quick-amt--active]="parsedTransferAmount() === amt"
+                  [class.wlt-quick-amt--disabled]="amt > balance()" [disabled]="amt > balance()"
+                  (click)="setQuickAmount(amt, 'transfer')">{{ amt.toLocaleString('fr-FR') }}</button>
+              }
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="tf-amount">{{ labels().transferAmount }}</label>
+            <div class="wlt-amount-input-wrap">
+              <input id="tf-amount" class="wlt-amount-input" type="text" inputmode="numeric"
+                [value]="transferAmountDisplay()" (input)="onTransferAmountInput($event)"
+                placeholder="0" [class.wlt-amount-input--error]="formError()" autocomplete="off"/>
+              <span class="wlt-amount-input__currency">FCFA</span>
+            </div>
+            @if (formError()) {
+              <p class="wlt-form-error"><lucide-icon name="circle-alert" [size]="13"></lucide-icon> {{ formError() }}</p>
+            }
+          </div>
+
+          <!-- Note -->
+          <div class="wlt-form-group">
+            <label class="wlt-form-label" for="tf-note">{{ labels().transferNote }}</label>
+            <textarea id="tf-note" class="wlt-textarea" rows="2" [placeholder]="labels().transferNotePh"
+              [value]="transferNote()" (input)="transferNote.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--primary" style="background:#C9A84C; box-shadow:0 4px 14px rgba(201,168,76,.3)" (click)="submitTransfer()">
+            {{ labels().transferConfirm }}
+            <lucide-icon name="send" [size]="16" color="#fff"></lucide-icon>
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'confirm') {
+        <div class="wlt-modal__body">
+          <div class="wlt-confirm-summary">
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Montant</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--big" style="color:#C9A84C">-{{ parsedTransferAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">{{ labels().transferTo }}</span>
+              <span class="wlt-confirm-row__value">+237 {{ transferRecipient() }}</span>
+            </div>
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Réseau</span>
+              <span class="wlt-confirm-row__value">{{ selectedTransferDestLabel }}</span>
+            </div>
+            @if (transferNote()) {
+              <div class="wlt-confirm-divider"></div>
+              <div class="wlt-confirm-row">
+                <span class="wlt-confirm-row__label">Message</span>
+                <span class="wlt-confirm-row__value">{{ transferNote() }}</span>
+              </div>
+            }
+            <div class="wlt-confirm-divider"></div>
+            <div class="wlt-confirm-row">
+              <span class="wlt-confirm-row__label">Solde restant</span>
+              <span class="wlt-confirm-row__value wlt-confirm-row__value--green">{{ (balance() - parsedTransferAmount()).toLocaleString('fr-FR') }}&nbsp;FCFA</span>
+            </div>
+          </div>
+        </div>
+        <div class="wlt-modal__footer">
+          <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
+          <button class="wlt-btn wlt-btn--primary" style="background:#C9A84C; box-shadow:0 4px 14px rgba(201,168,76,.3)" (click)="confirmTransfer()" [disabled]="isProcessing()">
+            @if (isProcessing()) { <span class="wlt-spinner"></span> {{ labels().processing }} }
+            @else { {{ labels().transferConfirm }} }
+          </button>
+        </div>
+      }
+
+      @if (modalStep() === 'success') {
+        <div class="wlt-modal__body wlt-modal__body--success">
+          <div class="wlt-success-icon" style="background:#FEF9EC">
+            <lucide-icon name="circle-check" [size]="48" color="#C9A84C"></lucide-icon>
+          </div>
+          <h3 class="wlt-success-title">{{ labels().transferSuccess }}</h3>
+          <p class="wlt-success-amount" style="color:#C9A84C">-{{ parsedTransferAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</p>
+          <p class="wlt-success-balance">{{ labels().transferTo }}: +237 {{ transferRecipient() }}</p>
+          <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
+        </div>
+        <div class="wlt-modal__footer wlt-modal__footer--center">
+          <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
+            <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
+            {{ labels().downloadReceipt }}
+          </button>
+          <button class="wlt-btn wlt-btn--primary" (click)="closeModal()">{{ labels().close }}</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HISTORY MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'history') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="labels().historyTitle">
+    <div class="wlt-modal wlt-modal--history">
+      <div class="wlt-modal__header">
+        <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+          <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+        </button>
+        <div class="wlt-modal__header-icon" style="background:#1B3A2D">
+          <lucide-icon name="clock" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().historyTitle }}</h2>
+          <p class="wlt-modal__subtitle">{{ labels().historySubtitle }}</p>
+        </div>
+      </div>
+
+      <div class="wlt-history-filters" role="tablist">
+        @for (f of historyFilters(); track f.value) {
+          <button class="wlt-history-filter-btn" [class.wlt-history-filter-btn--active]="historyFilter() === f.value"
+            (click)="historyFilter.set(f.value)" role="tab" [attr.aria-selected]="historyFilter() === f.value">
+            {{ f.label }}
+            @if (historyFilter() === f.value) {
+              <span class="wlt-history-filter-count">{{ filteredTransactions().length }}</span>
+            }
+          </button>
+        }
+      </div>
+
+      <div class="wlt-modal__body wlt-modal__body--history">
+        @if (filteredTransactions().length === 0) {
+          <div class="wlt-history-empty">
+            <lucide-icon name="inbox" [size]="40" color="#A0A0A0"></lucide-icon>
+            <p>{{ labels().historyEmpty }}</p>
+          </div>
+        } @else {
+          <div class="wlt-tx-card">
+            @for (tx of filteredTransactions(); track tx.id; let last = $last) {
+              <div class="wlt-tx-row">
+                <span class="wlt-tx-row__icon" [class.wlt-tx-row__icon--credit]="tx.amount > 0" [class.wlt-tx-row__icon--debit]="tx.amount < 0" aria-hidden="true">
+                  <lucide-icon [name]="tx.amount > 0 ? 'arrow-down-circle' : 'arrow-up-circle'" [size]="18"></lucide-icon>
+                </span>
+                <div class="wlt-tx-row__info">
+                  <span class="wlt-tx-row__label">{{ txLabel(tx) }}</span>
+                  @if (tx.groupName) { <span class="wlt-tx-row__group">{{ tx.groupName }}</span> }
+                  <span class="wlt-tx-row__date">{{ txDate(tx.date) }}</span>
+                </div>
+                <span class="wlt-tx-row__amount" [class.wlt-tx-row__amount--credit]="tx.amount > 0" [class.wlt-tx-row__amount--debit]="tx.amount < 0">
+                  {{ tx.amount > 0 ? '+' : '-' }}{{ formatAmount(tx.amount) }}
+                </span>
+              </div>
+              @if (!last) { <div class="wlt-tx-divider" aria-hidden="true"></div> }
+            }
+          </div>
+        }
+      </div>
+
+      <div class="wlt-modal__footer wlt-modal__footer--center">
+        <button class="wlt-btn wlt-btn--primary" (click)="closeModal()">{{ labels().close }}</button>
+      </div>
+    </div>
+  </div>
+}

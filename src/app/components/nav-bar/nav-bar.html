@@ -1,0 +1,137 @@
+<nav class="bn" (click)="$event.stopPropagation()" (document:click)="closeAll()">
+
+  <!-- ── BACK BUTTON (on detail pages) ── -->
+  @if (showBackButton()) {
+    <button
+      type="button"
+      class="bn-item bn-back-btn"
+      (click)="goBack()"
+      [attr.aria-label]="language() === 'fr' ? 'Retour' : 'Back'"
+    >
+      <span class="bn-icon">
+        <lucide-angular [img]="icons.ArrowLeft" [size]="22" aria-hidden="true"></lucide-angular>
+      </span>
+      <span class="bn-label">{{ language() === 'fr' ? 'Retour' : 'Back' }}</span>
+    </button>
+  }
+
+  <!-- ── LOGGED IN ── -->
+  @if (isLoggedIn()) {
+
+    @for (link of navLinks; track link.path) {
+      <a
+        [routerLink]="link.path"
+        routerLinkActive="bn-item--active"
+        class="bn-item"
+      >
+        <span class="bn-icon">
+          <lucide-angular [img]="link.icon" [size]="22" aria-hidden="true"></lucide-angular>
+        </span>
+        <span class="bn-label">{{ label(link) }}</span>
+      </a>
+    }
+
+    <!-- Notifications -->
+    <a routerLink="/app/notifications" routerLinkActive="bn-item--active" class="bn-item">
+      <span class="bn-icon">
+        <lucide-angular [img]="icons.Bell" [size]="22" aria-hidden="true"></lucide-angular>
+        <span class="bn-dot"></span>
+      </span>
+      <span class="bn-label">{{ language() === 'fr' ? 'Alertes' : 'Alerts' }}</span>
+    </a>
+
+    <!-- Profile tab -->
+    <button
+      type="button"
+      class="bn-item"
+      [class.bn-item--active]="showUserSheet()"
+      (click)="$event.stopPropagation(); toggleUserSheet()"
+    >
+      <span class="bn-avatar">BK</span>
+      <span class="bn-label">{{ language() === 'fr' ? 'Profil' : 'Profile' }}</span>
+    </button>
+
+    <!-- Profile bottom sheet -->
+    @if (showUserSheet()) {
+      <div class="bn-backdrop" (click)="closeAll()"></div>
+      <div class="bn-sheet" (click)="$event.stopPropagation()">
+        <div class="bn-sheet-handle"></div>
+
+        <div class="bn-sheet-row bn-sheet-row--lang">
+          <lucide-angular [img]="icons.Globe" [size]="18" aria-hidden="true"></lucide-angular>
+          <span>{{ language() === 'fr' ? 'Langue' : 'Language' }}</span>
+          <div class="bn-lang-toggle">
+            <button
+              type="button"
+              class="bn-lang-btn"
+              [class.bn-lang-btn--active]="language() === 'en'"
+              (click)="setLanguage('en')"
+            >EN</button>
+            <button
+              type="button"
+              class="bn-lang-btn"
+              [class.bn-lang-btn--active]="language() === 'fr'"
+              (click)="setLanguage('fr')"
+            >FR</button>
+          </div>
+        </div>
+
+        <div class="bn-sheet-divider"></div>
+
+        <button type="button" class="bn-sheet-row bn-sheet-row--danger" (click)="logout()">
+          <lucide-angular [img]="icons.LogOut" [size]="18" aria-hidden="true"></lucide-angular>
+          {{ language() === 'fr' ? 'Déconnexion' : 'Logout' }}
+        </button>
+      </div>
+    }
+
+  <!-- ── LOGGED OUT ── -->
+  } @else {
+
+    <a routerLink="/auth/login" routerLinkActive="bn-item--active" class="bn-item">
+      <span class="bn-icon">
+        <lucide-angular [img]="icons.LogIn" [size]="22" aria-hidden="true"></lucide-angular>
+      </span>
+      <span class="bn-label">{{ language() === 'fr' ? 'Connexion' : 'Login' }}</span>
+    </a>
+
+    <a routerLink="/auth/register" routerLinkActive="bn-item--active" class="bn-item bn-item--primary">
+      <span class="bn-icon">
+        <lucide-angular [img]="icons.UserPlus" [size]="22" aria-hidden="true"></lucide-angular>
+      </span>
+      <span class="bn-label">{{ language() === 'fr' ? 'Inscription' : 'Register' }}</span>
+    </a>
+
+    <button
+      type="button"
+      class="bn-item"
+      [class.bn-item--active]="showLangSheet()"
+      (click)="$event.stopPropagation(); toggleLangSheet()"
+    >
+      <span class="bn-icon">
+        <lucide-angular [img]="icons.Globe" [size]="22" aria-hidden="true"></lucide-angular>
+      </span>
+      <span class="bn-label">{{ language() === 'fr' ? 'FR' : 'EN' }}</span>
+    </button>
+
+    @if (showLangSheet()) {
+      <div class="bn-backdrop" (click)="closeAll()"></div>
+      <div class="bn-sheet" (click)="$event.stopPropagation()">
+        <div class="bn-sheet-handle"></div>
+        <button
+          type="button"
+          class="bn-sheet-row"
+          [class.bn-sheet-row--active]="language() === 'en'"
+          (click)="setLanguage('en')"
+        >🇬🇧 &nbsp;English</button>
+        <button
+          type="button"
+          class="bn-sheet-row"
+          [class.bn-sheet-row--active]="language() === 'fr'"
+          (click)="setLanguage('fr')"
+        >🇫🇷 &nbsp;Français</button>
+      </div>
+    }
+  }
+
+</nav>

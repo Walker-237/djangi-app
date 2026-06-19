@@ -1,0 +1,110 @@
+@if (community(); as c) {
+  <div class="cd-wrap">
+
+    <!-- ── HERO ── -->
+    <div class="cd-hero">
+      <img [src]="c.imageUrl" [alt]="communityName(c)" class="cd-hero-img"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+      <div class="cd-hero-fallback">
+        <span>{{ communityName(c).charAt(0) }}</span>
+      </div>
+      <div class="cd-hero-tint"></div>
+      <div class="cd-hero-gradient"></div>
+
+      <!-- Back button -->
+      <button type="button" (click)="goBack()" class="cd-back-btn">
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+
+      <!-- Hero text -->
+      <div class="cd-hero-content">
+        <div class="cd-hero-location">
+          <lucide-icon name="map-pin" [size]="12"></lucide-icon>
+          {{ c.location }}
+        </div>
+        <h1 class="cd-hero-name">{{ communityName(c) }}</h1>
+        <div class="cd-hero-stats">
+          <span>
+            <lucide-icon name="layers" [size]="14"></lucide-icon>
+            {{ c.groupCount }} {{ language() === 'fr' ? 'groupes' : 'groups' }}
+          </span>
+          <span>
+            <lucide-icon name="users" [size]="14"></lucide-icon>
+            {{ c.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}
+          </span>
+          <span>
+            <lucide-icon name="wallet" [size]="14"></lucide-icon>
+            {{ formatAmount(c.totalSavings) }} FCFA
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BODY ── -->
+    <div class="cd-body">
+
+      <!-- About -->
+      <section class="cd-section">
+        <h2 class="cd-section-title">{{ language() === 'fr' ? 'À propos' : 'About' }}</h2>
+        <p class="cd-about">{{ communityDescription(c) }}</p>
+      </section>
+
+      <!-- Groups -->
+      <section class="cd-section">
+        <div class="cd-section-row">
+          <h2 class="cd-section-title">{{ language() === 'fr' ? 'Groupes disponibles' : 'Available groups' }}</h2>
+          <span class="cd-badge">{{ c.groups.length }}</span>
+        </div>
+
+        <div class="cd-groups-list">
+          @for (group of c.groups; track group.id) {
+            <button type="button" (click)="openGroup(group)" class="cd-group-card">
+              <!-- Left accent -->
+              <div class="cd-group-accent"></div>
+
+              <div class="cd-group-info">
+                <h3 class="cd-group-name">{{ group.name }}</h3>
+                <p class="cd-group-desc">{{ group.description }}</p>
+                <div class="cd-group-meta">
+                  <span class="cd-meta-chip">
+                    <lucide-icon name="users" [size]="11"></lucide-icon>
+                    {{ group.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}
+                  </span>
+                  <span class="cd-meta-chip">
+                    <lucide-icon name="calendar" [size]="11"></lucide-icon>
+                    {{ frequencyLabel(group.frequency) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="cd-group-right">
+                <p class="cd-group-amount">{{ formatAmount(group.contributionAmount) }}</p>
+                <p class="cd-group-currency">{{ group.currency }}</p>
+                <lucide-icon name="chevron-right" [size]="18" class="cd-group-chevron"></lucide-icon>
+              </div>
+            </button>
+          }
+
+          @if (c.groups.length === 0) {
+            <div class="cd-empty">
+              <p>{{ language() === 'fr' ? 'Aucun groupe pour l\'instant.' : 'No groups yet.' }}</p>
+            </div>
+          }
+        </div>
+
+        <button type="button" class="cd-create-group-btn" (click)="openCreateGroup()">
+          <lucide-icon name="plus" [size]="18"></lucide-icon>
+          <span>{{ language() === 'fr' ? 'Créer un groupe' : 'Create group' }}</span>
+        </button>
+      </section>
+
+    </div>
+  </div>
+} @else {
+  <div class="cd-not-found">
+    <button type="button" (click)="goBack()" class="cd-back-btn-plain">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <p>{{ language() === 'fr' ? 'Communauté introuvable.' : 'Community not found.' }}</p>
+  </div>
+}

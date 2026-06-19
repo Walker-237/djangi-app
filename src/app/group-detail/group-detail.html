@@ -1,0 +1,320 @@
+@if (group(); as g) {
+  <div class="gd-wrap">
+
+    <!-- ── HERO ── -->
+    <div class="gd-hero">
+      <button type="button" (click)="goBack()" class="gd-back-btn">
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+
+      <button type="button" class="gd-dev-toggle" (click)="isMember.update(v => !v)">
+        {{ isMember() ? '👤 Member' : '👁 Guest' }}
+      </button>
+
+      <div class="gd-hero-avatar">{{ g.name.charAt(0) }}</div>
+      <h1 class="gd-hero-name">{{ g.name }}</h1>
+      <p class="gd-hero-freq">{{ frequencyLabel(g.frequency) }}</p>
+
+      <div class="gd-hero-pills">
+        <span class="gd-hero-pill">
+          <lucide-icon name="users" [size]="12"></lucide-icon>
+          {{ g.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}
+        </span>
+        <span class="gd-hero-pill">
+          <lucide-icon name="wallet" [size]="12"></lucide-icon>
+          {{ formatAmount(g.totalPot) }} {{ g.currency }}
+        </span>
+        <span class="gd-hero-pill">
+          <lucide-icon name="trending-up" [size]="12"></lucide-icon>
+          {{ formatAmount(g.contributionAmount) }} / {{ language() === 'fr' ? 'cycle' : 'cycle' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ════ MEMBER VIEW ════ -->
+    @if (isMember()) {
+      <div class="gd-body">
+
+        <!-- MY STATUS BANNER -->
+        <div class="gd-status-banner gd-status-banner--{{ myMember()?.status ?? 'pending' }}">
+          <div class="gd-status-banner-col">
+            <p class="gd-sbanner-label">{{ language() === 'fr' ? 'Statut' : 'Status' }}</p>
+            <p class="gd-sbanner-value">{{ statusLabel(myMember()?.status ?? 'pending') }}</p>
+          </div>
+          <div class="gd-sbanner-divider"></div>
+          <div class="gd-status-banner-col">
+            <p class="gd-sbanner-label">{{ language() === 'fr' ? 'Position' : 'Position' }}</p>
+            <p class="gd-sbanner-value">#{{ myMember()?.position ?? 1 }} / {{ g.memberCount }}</p>
+          </div>
+          <div class="gd-sbanner-divider"></div>
+          <div class="gd-status-banner-col">
+            <p class="gd-sbanner-label">{{ language() === 'fr' ? 'Versement' : 'Payout' }}</p>
+            <p class="gd-sbanner-value">{{ formatAmount(g.totalPot) }}</p>
+          </div>
+        </div>
+
+        <!-- CYCLE RING -->
+        <section class="gd-section">
+          <div class="gd-section-row">
+            <h2 class="gd-section-title">{{ language() === 'fr' ? 'Cycle de rotation' : 'Rotation cycle' }}</h2>
+            <span class="gd-badge">{{ language() === 'fr' ? 'Cycle' : 'Cycle' }} {{ cycleNumber() }}</span>
+          </div>
+
+          <div class="gd-cycle-card">
+            <div class="gd-cycle-ring-wrap">
+              <svg width="130" height="130" viewBox="0 0 140 140" aria-hidden="true">
+                <circle cx="70" cy="70" r="60" stroke="#E5E7EB" stroke-width="12" fill="none"/>
+                <circle
+                  cx="70" cy="70" r="60"
+                  stroke="url(#ringGrad)"
+                  stroke-width="12"
+                  stroke-linecap="round"
+                  fill="none"
+                  transform="rotate(-90 70 70)"
+                  [attr.stroke-dasharray]="circleCircumference"
+                  [attr.stroke-dashoffset]="cycleDashOffset()"
+                  style="transition: stroke-dashoffset 0.6s ease"
+                />
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#4ADE80"/>
+                    <stop offset="100%" stop-color="#1B3A2D"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="gd-cycle-center">
+                <span class="gd-cycle-num">{{ paidCount() }}/{{ totalMembers() }}</span>
+                <span class="gd-cycle-sub">{{ language() === 'fr' ? 'versés' : 'paid out' }}</span>
+              </div>
+            </div>
+
+            <div class="gd-cycle-avatars">
+              @for (member of g.members; track member.id) {
+                <div
+                  class="gd-avatar-bubble gd-avatar--{{ member.status }}"
+                  [title]="member.name"
+                >
+                  {{ member.initials }}
+                  @if (member.status === 'next') {
+                    <span class="gd-avatar-pulse"></span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="gd-cycle-legend">
+              <span class="gd-legend-item"><span class="gd-legend-dot gd-legend--paid"></span>{{ language() === 'fr' ? 'Versé' : 'Paid' }}</span>
+              <span class="gd-legend-item"><span class="gd-legend-dot gd-legend--next"></span>{{ language() === 'fr' ? 'Prochain' : 'Next' }}</span>
+              <span class="gd-legend-item"><span class="gd-legend-dot gd-legend--pending"></span>{{ language() === 'fr' ? 'En attente' : 'Pending' }}</span>
+              <span class="gd-legend-item"><span class="gd-legend-dot gd-legend--late"></span>{{ language() === 'fr' ? 'Retard' : 'Late' }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- NEXT PAYOUT ALERT -->
+        @if (nextMember()) {
+          <div class="gd-next-alert">
+            <div class="gd-next-alert-dot"></div>
+            <lucide-icon name="calendar" [size]="18" class="gd-next-alert-icon"></lucide-icon>
+            <div class="gd-next-alert-body">
+              <p class="gd-next-alert-label">{{ language() === 'fr' ? 'Prochain versement pour' : 'Next payout for' }}</p>
+              <p class="gd-next-alert-name">{{ nextMember()!.name }}</p>
+            </div>
+            <div class="gd-next-alert-right">
+              <p class="gd-next-alert-amount">{{ formatAmount(g.totalPot) }} {{ g.currency }}</p>
+              <p class="gd-next-alert-date">{{ formatDate(g.nextPayoutDate) }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- QUICK ACTIONS -->
+        <section class="gd-section">
+          <div class="gd-quick-actions">
+            <button type="button" class="gd-qa-btn gd-qa-btn--primary" (click)="openContributions()">
+              <div class="gd-qa-icon"><lucide-icon name="wallet" [size]="22"></lucide-icon></div>
+              <span>{{ language() === 'fr' ? 'Cotisation' : 'Contribute' }}</span>
+            </button>
+            <button type="button" class="gd-qa-btn" (click)="openPayouts()">
+              <div class="gd-qa-icon"><lucide-icon name="trending-up" [size]="22"></lucide-icon></div>
+              <span>{{ language() === 'fr' ? 'Versements' : 'Payouts' }}</span>
+            </button>
+            <button type="button" class="gd-qa-btn" (click)="openMeetings()">
+              <div class="gd-qa-icon"><lucide-icon name="calendar" [size]="22"></lucide-icon></div>
+              <span>{{ language() === 'fr' ? 'Réunions' : 'Meetings' }}</span>
+            </button>
+            <button type="button" class="gd-qa-btn" (click)="openComplaints()">
+              <div class="gd-qa-icon"><lucide-icon name="message-square" [size]="22"></lucide-icon></div>
+              <span>{{ language() === 'fr' ? 'Plaintes' : 'Complaints' }}</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- MEETINGS -->
+        <section class="gd-section">
+          <div class="gd-section-row">
+            <h2 class="gd-section-title">{{ language() === 'fr' ? 'Réunions' : 'Meetings' }}</h2>
+            <button type="button" class="gd-see-all" (click)="openMeetings()">
+              {{ language() === 'fr' ? 'Voir tout' : 'See all' }}
+              <lucide-icon name="chevron-right" [size]="14"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="gd-meetings-list">
+            @for (meeting of meetings; track meeting.id) {
+              <div class="gd-meeting-card">
+                <div class="gd-meeting-icon-wrap gd-meeting-icon--{{ meeting.status }}">
+                  <lucide-icon [name]="meeting.status === 'completed' ? 'check-circle' : 'calendar'" [size]="18"></lucide-icon>
+                </div>
+                <div class="gd-meeting-info">
+                  <p class="gd-meeting-title">{{ meeting.title }}</p>
+                  <p class="gd-meeting-date">{{ formatDate(meeting.date) }}</p>
+                </div>
+                <div class="gd-meeting-right">
+                  @if (meeting.hasAiSummary) {
+                    <span class="gd-ai-badge">
+                      <lucide-icon name="sparkles" [size]="11"></lucide-icon>
+                      IA
+                    </span>
+                  }
+                  <span class="gd-meeting-chip gd-meeting-chip--{{ meeting.status }}">
+                    {{ meetingStatusLabel(meeting.status) }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- ROTATION ORDER -->
+        <section class="gd-section">
+          <div class="gd-section-row">
+            <h2 class="gd-section-title">{{ language() === 'fr' ? 'Ordre de rotation' : 'Rotation order' }}</h2>
+            <span class="gd-badge">{{ g.members.length }}</span>
+          </div>
+
+          <div class="gd-members-list">
+            @for (member of g.members; track member.id) {
+              <div
+                class="gd-member-row"
+                [class.gd-member-row--next]="member.status === 'next'"
+                [class.gd-member-row--me]="member.id === myMember()?.id"
+              >
+                <div class="gd-pos-badge gd-pos--{{ member.status }}">{{ member.position }}</div>
+                <div class="gd-member-avatar">{{ member.initials }}</div>
+                <div class="gd-member-info">
+                  <p class="gd-member-name">
+                    {{ member.name }}
+                    @if (member.id === myMember()?.id) {
+                      <span class="gd-me-chip">{{ language() === 'fr' ? 'Moi' : 'Me' }}</span>
+                    }
+                  </p>
+                  <span class="gd-status {{ statusClass(member.status) }}">{{ statusLabel(member.status) }}</span>
+                </div>
+                @if (member.status === 'paid') {
+                  <lucide-icon name="check-circle" [size]="18" class="gd-received-icon"></lucide-icon>
+                } @else if (member.status === 'next') {
+                  <span class="gd-next-chip">{{ language() === 'fr' ? 'Prochain' : 'Next' }}</span>
+                } @else if (member.status === 'late') {
+                  <lucide-icon name="alert-circle" [size]="18" class="gd-late-icon"></lucide-icon>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- COMPLAINT -->
+        <section class="gd-section">
+          <div class="gd-complaint-card">
+            <div class="gd-complaint-icon-wrap">
+              <lucide-icon name="message-square" [size]="20"></lucide-icon>
+            </div>
+            <div class="gd-complaint-body">
+              <p class="gd-complaint-title">{{ language() === 'fr' ? 'Un problème ?' : 'Have an issue?' }}</p>
+              <p class="gd-complaint-sub">{{ language() === 'fr' ? 'Contactez l\'administrateur.' : 'Contact the group admin.' }}</p>
+            </div>
+            <button type="button" class="gd-complaint-btn" (click)="openComplaints()">
+              {{ language() === 'fr' ? 'Signaler' : 'Report' }}
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- MEMBER BOTTOM BAR -->
+      <div class="gd-member-bar">
+        <div>
+          <p class="gd-member-bar-label">{{ language() === 'fr' ? 'Prochaine cotisation' : 'Next contribution' }}</p>
+          <p class="gd-member-bar-value">{{ formatAmount(g.contributionAmount) }} {{ g.currency }} · {{ formatDate(g.nextPayoutDate) }}</p>
+        </div>
+        <button type="button" class="gd-pay-btn" (click)="openContributions()">
+          {{ language() === 'fr' ? 'Payer' : 'Pay now' }}
+        </button>
+      </div>
+
+    <!-- ════ NON-MEMBER VIEW ════ -->
+    } @else {
+      <div class="gd-body">
+
+        <section class="gd-section">
+          <h2 class="gd-section-title">{{ language() === 'fr' ? 'À propos' : 'About' }}</h2>
+          <p class="gd-about">{{ g.description }}</p>
+        </section>
+
+        <section class="gd-section">
+          <h2 class="gd-section-title">{{ language() === 'fr' ? 'Prochain versement' : 'Next payout' }}</h2>
+          <div class="gd-payout-card">
+            <div class="gd-payout-left">
+              <lucide-icon name="calendar" [size]="20" class="gd-payout-icon"></lucide-icon>
+              <div>
+                <p class="gd-payout-date">{{ formatDate(g.nextPayoutDate) }}</p>
+                <p class="gd-payout-sub">{{ language() === 'fr' ? 'Bénéficiaire : membre #' : 'Recipient: member #' }}{{ g.nextPayoutMemberId }}</p>
+              </div>
+            </div>
+            <span class="gd-payout-amount">{{ formatAmount(g.totalPot) }} {{ g.currency }}</span>
+          </div>
+        </section>
+
+        <section class="gd-section">
+          <div class="gd-section-row">
+            <h2 class="gd-section-title">{{ language() === 'fr' ? 'Membres' : 'Members' }}</h2>
+            <span class="gd-badge">{{ g.members.length }}</span>
+          </div>
+          <div class="gd-members-list">
+            @for (member of g.members; track member.id) {
+              <div class="gd-member">
+                <div class="gd-member-avatar">{{ member.initials }}</div>
+                <div class="gd-member-info">
+                  <p class="gd-member-name">{{ member.name }}</p>
+                  <p class="gd-member-pos">{{ language() === 'fr' ? 'Position' : 'Position' }} #{{ member.position }}</p>
+                </div>
+                <div class="gd-status {{ statusClass(member.status) }}">
+                  <lucide-icon [name]="statusIcon(member.status)" [size]="13"></lucide-icon>
+                  {{ statusLabel(member.status) }}
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+      </div>
+
+      <div class="gd-cta-bar">
+        <div class="gd-cta-info">
+          <p class="gd-cta-amount">{{ formatAmount(g.contributionAmount) }} {{ g.currency }}</p>
+          <p class="gd-cta-per">{{ language() === 'fr' ? 'par cycle' : 'per cycle' }}</p>
+        </div>
+        <button type="button" (click)="joinGroup(g)" class="gd-join-btn">
+          {{ language() === 'fr' ? 'Rejoindre le groupe' : 'Join group' }}
+        </button>
+      </div>
+    }
+
+  </div>
+} @else {
+  <div class="gd-not-found">
+    <button type="button" (click)="goBack()" class="gd-back-plain">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <p>{{ language() === 'fr' ? 'Groupe introuvable.' : 'Group not found.' }}</p>
+  </div>
+}

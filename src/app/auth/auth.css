@@ -1,0 +1,171 @@
+@keyframes authFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authPanelLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes authPanelRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes authFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes authPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes authUnderline {
+  from {
+    opacity: 0;
+    transform: scaleX(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.auth-panel-left {
+  animation: authPanelLeft 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.blabla{
+  color: #3c6c54cf;
+}
+
+.auth-panel-right {
+  animation: authPanelRight 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-fade-down {
+  animation: authFadeDown 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-slide-up {
+  animation: authSlideUp 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-pop {
+  animation: authPop 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-float {
+  animation:
+    authSlideUp 650ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    authFloat 5.2s ease-in-out 850ms infinite;
+}
+
+.auth-underline {
+  transform-origin: center;
+  animation: authUnderline 260ms ease-out both;
+}
+
+.auth-delay-1 {
+  animation-delay: 110ms;
+}
+
+.auth-delay-2 {
+  animation-delay: 220ms;
+}
+
+.auth-delay-3 {
+  animation-delay: 330ms;
+}
+
+.auth-input-wrap {
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.auth-input-wrap:focus-within {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 10px 16px rgba(27, 58, 45, 0.08));
+}
+
+.auth-primary-btn,
+.auth-secondary-btn {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.auth-primary-btn:hover,
+.auth-secondary-btn:hover {
+  transform: translateY(-2px);
+}
+
+.auth-primary-btn:hover {
+  box-shadow: 0 16px 28px rgba(27, 58, 45, 0.22);
+}
+
+.auth-secondary-btn:hover {
+  box-shadow: 0 14px 24px rgba(55, 65, 81, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}

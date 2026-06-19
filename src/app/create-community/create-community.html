@@ -1,0 +1,86 @@
+<div class="cg-wrap">
+
+  <!-- ── HEADER ── -->
+  <header class="cg-header">
+    <button type="button" (click)="goBack()" class="cg-back-btn">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <h1 class="cg-title">{{ language() === 'fr' ? 'Créer une communauté' : 'Create community' }}</h1>
+    <div></div>
+  </header>
+
+  <form (ngSubmit)="onSubmit()" class="cg-form">
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'Nom de la communauté (anglais)' : 'Community name (English)' }}</label>
+      <input
+        type="text"
+        [(ngModel)]="nameEn"
+        name="nameEn"
+        class="cg-input"
+        required
+      />
+    </div>
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'Nom de la communauté (français)' : 'Community name (French)' }}</label>
+      <input
+        type="text"
+        [(ngModel)]="nameFr"
+        name="nameFr"
+        class="cg-input"
+        required
+      />
+    </div>
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'Description (anglais)' : 'Description (English)' }}</label>
+      <textarea
+        [(ngModel)]="descriptionEn"
+        name="descriptionEn"
+        class="cg-input cg-textarea"
+        required
+      ></textarea>
+    </div>
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'Description (français)' : 'Description (French)' }}</label>
+      <textarea
+        [(ngModel)]="descriptionFr"
+        name="descriptionFr"
+        class="cg-input cg-textarea"
+        required
+      ></textarea>
+    </div>
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'Localisation' : 'Location' }}</label>
+      <input
+        type="text"
+        [(ngModel)]="locationValue"
+        name="locationValue"
+        class="cg-input"
+        required
+      />
+    </div>
+
+    <div class="cg-field">
+      <label class="cg-label">{{ language() === 'fr' ? 'URL de l’image' : 'Image URL' }}</label>
+      <input
+        type="url"
+        [(ngModel)]="imageUrl"
+        name="imageUrl"
+        class="cg-input"
+        [placeholder]="language() === 'fr' ? 'Optionnel' : 'Optional'"
+      />
+    </div>
+
+  </form>
+
+  <div class="cg-footer">
+    <button type="submit" (click)="onSubmit()" class="cg-submit-btn">
+      {{ language() === 'fr' ? 'Créer une communauté' : 'Create community' }}
+    </button>
+  </div>
+
+</div>

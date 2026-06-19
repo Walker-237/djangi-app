@@ -1,0 +1,67 @@
+<div class="ac-wrap">
+
+  <!-- ── HEADER ── -->
+  <header class="ac-header">
+    <button type="button" (click)="goBack()" class="ac-back-btn">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <h1 class="ac-title">{{ language() === 'fr' ? 'Toutes les communautés' : 'All communities' }}</h1>
+    <div></div>
+  </header>
+
+  <!-- ── SEARCH ── -->
+  <div class="ac-search-wrap">
+    <input
+      type="text"
+      [value]="searchQuery()"
+      (input)="onSearchInput($any($event.target).value)"
+      [placeholder]="language() === 'fr' ? 'Rechercher...' : 'Search...'"
+      class="ac-search-input"
+    />
+  </div>
+
+  <!-- ── LIST ── -->
+  <div class="ac-list">
+    @if (filteredCommunities().length === 0) {
+      <div class="ac-empty">
+        <p>{{ language() === 'fr' ? 'Aucune communauté trouvée.' : 'No communities found.' }}</p>
+      </div>
+    } @else {
+      @for (community of filteredCommunities(); track community.id) {
+        <button type="button" (click)="openCommunity(community)" class="ac-row">
+          <!-- Image / thumbnail -->
+          <div class="ac-thumbnail">
+            <img
+              [src]="community.imageUrl"
+              [alt]="communityName(community)"
+              class="ac-thumbnail-img"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="ac-thumbnail-fallback">
+              {{ communityName(community).charAt(0) }}
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="ac-content">
+            <h3 class="ac-name">{{ communityName(community) }}</h3>
+            <div class="ac-meta">
+              <span class="ac-meta-item">
+                <lucide-icon name="layers" [size]="13"></lucide-icon>
+                {{ community.groupCount }} {{ language() === 'fr' ? 'groupes' : 'groups' }}
+              </span>
+              <span class="ac-meta-item">
+                <lucide-icon name="users" [size]="13"></lucide-icon>
+                {{ community.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Chevron -->
+          <lucide-icon name="chevron-right" [size]="20" class="ac-chevron"></lucide-icon>
+        </button>
+      }
+    }
+  </div>
+
+</div>

@@ -1,0 +1,131 @@
+<div class="comm-wrap">
+
+  <!-- ── HEADER ── -->
+  <header class="comm-header">
+    <div>
+      <p class="comm-greeting">{{ language() === 'fr' ? 'Explorez' : 'Explore' }}</p>
+      <h1 class="comm-title">{{ language() === 'fr' ? 'Communautés' : 'Communities' }}</h1>
+    </div>
+    <button type="button" (click)="openCreateCommunity()" class="comm-create-btn">
+      <lucide-icon name="plus" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <!-- ── SEARCH ── -->
+  <div class="comm-search-wrap">
+    <lucide-icon name="search" [size]="16" class="comm-search-icon"></lucide-icon>
+    <input
+      type="text"
+      [value]="searchQuery()"
+      (input)="onSearchInput($any($event.target).value)"
+      [placeholder]="language() === 'fr' ? 'Rechercher...' : 'Search...'"
+      class="comm-search-input"
+    />
+  </div>
+
+  <!-- ── MY GROUPS ── -->
+  @if (myGroups().length > 0) {
+    <section class="comm-section">
+      <h2 class="comm-section-title">{{ language() === 'fr' ? 'Mes groupes' : 'My groups' }}</h2>
+      <div class="comm-my-scroll">
+        @for (group of myGroups(); track group.id) {
+          <button type="button" (click)="openGroup(group)" class="comm-my-card">
+            <div class="comm-my-card-bg">
+              <span class="comm-my-card-letter">{{ group.name.charAt(0) }}</span>
+            </div>
+            <div class="comm-my-card-body">
+              <span class="comm-my-badge">
+                <span class="comm-my-dot"></span>
+                {{ language() === 'fr' ? 'Membre' : 'Member' }}
+              </span>
+              <h3 class="comm-my-name">{{ group.name }}</h3>
+              <p class="comm-my-meta">{{ group.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}</p>
+              <p class="comm-my-pot">{{ formatAmount(group.totalPot) }} {{ group.currency }}</p>
+            </div>
+          </button>
+        }
+        <!-- New group card -->
+        <button type="button" (click)="openCreateCommunity()" class="comm-new-card">
+          <div class="comm-new-icon">
+            <lucide-icon name="plus" [size]="22"></lucide-icon>
+          </div>
+          <span class="comm-new-label">{{ language() === 'fr' ? 'Nouveau' : 'New group' }}</span>
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ── DISCOVER (swipeable stack) ── -->
+  <section class="comm-section comm-section--discover">
+    <div class="comm-section-row">
+      <h2 class="comm-section-title">{{ language() === 'fr' ? 'Découvrir' : 'Discover' }}</h2>
+      <span class="comm-count">{{ filteredCommunities().length }}</span>
+    </div>
+
+    @if (filteredCommunities().length === 0) {
+      <div class="comm-empty">
+        <p>{{ language() === 'fr' ? 'Aucune communauté trouvée.' : 'No communities found.' }}</p>
+      </div>
+    } @else {
+      <!-- Swipe scroll -->
+      <div class="comm-swipe-track">
+        @for (community of filteredCommunities(); track community.id) {
+          <button type="button" (click)="openCommunity(community)" class="comm-card">
+            <!-- Image -->
+            <img
+              [src]="community.imageUrl"
+              [alt]="communityName(community)"
+              class="comm-card-img"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <!-- Fallback -->
+            <div class="comm-card-fallback">
+              <span>{{ communityName(community).charAt(0) }}</span>
+            </div>
+            <!-- Overlays -->
+            <div class="comm-card-tint"></div>
+            <div class="comm-card-gradient"></div>
+            <!-- Content -->
+            <div class="comm-card-content">
+              <div class="comm-card-top">
+                <span class="comm-card-location">
+                  <lucide-icon name="map-pin" [size]="12"></lucide-icon>
+                  {{ community.location }}
+                </span>
+              </div>
+              <div class="comm-card-bottom">
+                <h3 class="comm-card-name">{{ communityName(community) }}</h3>
+                <p class="comm-card-desc">{{ communityDescription(community) }}</p>
+                <div class="comm-card-stats">
+                  <span>
+                    <lucide-icon name="layers" [size]="13"></lucide-icon>
+                    {{ community.groupCount }} {{ language() === 'fr' ? 'groupes' : 'groups' }}
+                  </span>
+                  <span>
+                    <lucide-icon name="users" [size]="13"></lucide-icon>
+                    {{ community.memberCount }} {{ language() === 'fr' ? 'membres' : 'members' }}
+                  </span>
+                </div>
+                <div class="comm-card-cta">
+                  <span>{{ language() === 'fr' ? 'Voir plus' : 'See more' }}</span>
+                  <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                </div>
+              </div>
+            </div>
+          </button>
+        }
+      </div>
+
+      <!-- See all communities link -->
+      <button
+        type="button"
+        (click)="router.navigate(['/app/communities/all'])"
+        class="comm-see-all-link"
+      >
+        <span>{{ language() === 'fr' ? 'Voir toutes les communautés' : 'See all communities' }}</span>
+        <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+      </button>
+    }
+  </section>
+
+</div>

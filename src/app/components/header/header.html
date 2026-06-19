@@ -1,0 +1,197 @@
+<nav class="header-nav" (click)="$event.stopPropagation()" (document:click)="closeAll()">
+
+  <!-- ── DESKTOP ── -->
+  <div class="header-inner">
+
+    <!-- Logo -->
+    <a routerLink="/" class="header-logo" aria-label="Nkap Link">
+      <img src="/assets/image/logo.png" alt="Nkap Link" class="header-logo-img" />
+    </a>
+
+    <!-- Center nav links (only when logged in) -->
+    @if (isLoggedIn()) {
+      <ul class="header-links" role="list">
+        @for (link of navLinks; track link.path) {
+          <li>
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="header-link-active"
+              class="header-link"
+            >
+              <lucide-icon [name]="link.icon" [size]="16" aria-hidden="true"></lucide-icon>
+              {{ label(link) }}
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    <!-- Right actions -->
+    <div class="header-actions">
+
+      <!-- Language dropdown -->
+      <div class="header-dropdown-wrap">
+        <button
+          type="button"
+          class="header-lang-btn"
+          (click)="$event.stopPropagation(); toggleLangDropdown()"
+          [attr.aria-expanded]="showLangDropdown()"
+          aria-haspopup="listbox"
+        >
+          <lucide-icon name="globe" [size]="15" aria-hidden="true"></lucide-icon>
+          <span>{{ language() === 'fr' ? 'FR' : 'EN' }}</span>
+          <lucide-icon
+            name="chevron-down"
+            [size]="13"
+            class="header-chevron"
+            [class.header-chevron-open]="showLangDropdown()"
+            aria-hidden="true"
+          ></lucide-icon>
+        </button>
+
+        @if (showLangDropdown()) {
+          <div class="header-dropdown" role="listbox">
+            <button
+              type="button"
+              role="option"
+              class="header-dropdown-item"
+              [class.header-dropdown-item-active]="language() === 'en'"
+              (click)="setLanguage('en')"
+            >
+              🇬🇧 English
+            </button>
+            <button
+              type="button"
+              role="option"
+              class="header-dropdown-item"
+              [class.header-dropdown-item-active]="language() === 'fr'"
+              (click)="setLanguage('fr')"
+            >
+              🇫🇷 Français
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Auth buttons (not logged in) -->
+      @if (!isLoggedIn()) {
+        <a routerLink="/auth/login" class="header-btn-ghost">
+          <lucide-icon name="log-in" [size]="15" aria-hidden="true"></lucide-icon>
+          {{ language() === 'fr' ? 'Connexion' : 'Login' }}
+        </a>
+        <a routerLink="/auth/register" class="header-btn-primary">
+          <lucide-icon name="user-plus" [size]="15" aria-hidden="true"></lucide-icon>
+          {{ language() === 'fr' ? 'Inscription' : 'Register' }}
+        </a>
+      }
+
+      <!-- Logged in actions -->
+      @if (isLoggedIn()) {
+        <a routerLink="/app/notifications" class="header-icon-btn" aria-label="Notifications">
+          <lucide-icon name="bell" [size]="18" aria-hidden="true"></lucide-icon>
+          <span class="header-notif-dot"></span>
+        </a>
+
+        <div class="header-dropdown-wrap">
+          <button
+            type="button"
+            class="header-avatar"
+            (click)="$event.stopPropagation(); toggleUserDropdown()"
+            [attr.aria-expanded]="showUserDropdown()"
+          >
+            BK
+          </button>
+
+          @if (showUserDropdown()) {
+            <div class="header-dropdown header-dropdown-right" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                class="header-dropdown-item"
+                (click)="logout()"
+              >
+                <lucide-icon name="log-out" [size]="15" aria-hidden="true"></lucide-icon>
+                {{ language() === 'fr' ? 'Déconnexion' : 'Logout' }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Hamburger (mobile only) -->
+      <button
+        type="button"
+        class="header-hamburger"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="showMobileMenu()"
+        aria-label="Toggle menu"
+      >
+        @if (showMobileMenu()) {
+          <lucide-icon name="x" [size]="22" aria-hidden="true"></lucide-icon>
+        } @else {
+          <lucide-icon name="menu" [size]="22" aria-hidden="true"></lucide-icon>
+        }
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ── MOBILE MENU ── -->
+  @if (showMobileMenu()) {
+    <div class="header-mobile-menu">
+
+      @if (isLoggedIn()) {
+        <ul role="list" class="header-mobile-links">
+          @for (link of navLinks; track link.path) {
+            <li>
+              <a
+                [routerLink]="link.path"
+                routerLinkActive="header-mobile-link-active"
+                class="header-mobile-link"
+                (click)="toggleMobileMenu()"
+              >
+                <lucide-icon [name]="link.icon" [size]="18" aria-hidden="true"></lucide-icon>
+                {{ label(link) }}
+              </a>
+            </li>
+          }
+        </ul>
+        <div class="header-mobile-divider"></div>
+        <button type="button" class="header-mobile-logout" (click)="logout()">
+          <lucide-icon name="log-out" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ language() === 'fr' ? 'Déconnexion' : 'Logout' }}
+        </button>
+      } @else {
+        <div class="header-mobile-auth">
+          <a routerLink="/auth/login" class="header-btn-ghost w-full justify-center" (click)="toggleMobileMenu()">
+            <lucide-icon name="log-in" [size]="15" aria-hidden="true"></lucide-icon>
+            {{ language() === 'fr' ? 'Connexion' : 'Login' }}
+          </a>
+          <a routerLink="/auth/register" class="header-btn-primary w-full justify-center" (click)="toggleMobileMenu()">
+            <lucide-icon name="user-plus" [size]="15" aria-hidden="true"></lucide-icon>
+            {{ language() === 'fr' ? 'Inscription' : 'Register' }}
+          </a>
+        </div>
+      }
+
+      <!-- Mobile language toggle -->
+      <div class="header-mobile-lang">
+        <button
+          type="button"
+          class="header-mobile-lang-btn"
+          [class.active]="language() === 'en'"
+          (click)="setLanguage('en')"
+        >EN</button>
+        <span>/</span>
+        <button 
+          type="button"
+          class="header-mobile-lang-btn"
+          [class.active]="language() === 'fr'"
+          (click)="setLanguage('fr')"
+        >FR</button>
+      </div>
+
+    </div>
+  }
+
+</nav>

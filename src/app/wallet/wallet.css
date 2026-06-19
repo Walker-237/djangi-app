@@ -1,0 +1,1548 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   WALLET  ·  wallet.css
+   Prefix: wlt-   ·  No Tailwind  ·  Mobile-first
+   Design language: warm cream base, deep green, white cards, 3xl radii
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens ────────────────────────────────────────────────────────── */
+:host {
+  /* Palette */
+  --wlt-bg:              #F7F3ED;
+  --wlt-green-900:       #1B3A2D;
+  --wlt-green-700:       #2E5C44;
+  --wlt-green-500:       #4A7C59;
+  --wlt-green-400:       #6FA880;
+  --wlt-white:           #FFFFFF;
+  --wlt-cream-100:       #F0EBE3;
+  --wlt-cream-200:       #E5DDD3;
+  --wlt-text-primary:    #1A1A1A;
+  --wlt-text-secondary:  #6B6B6B;
+  --wlt-text-muted:      #A0A0A0;
+  --wlt-red:             #C0392B;
+  --wlt-red-light:       #FDEDEB;
+  --wlt-green-light:     #EBF5EF;
+
+  /* Shadows */
+  --wlt-shadow-sm:   0 1px 4px rgba(27,58,45,.06), 0 1px 2px rgba(0,0,0,.04);
+  --wlt-shadow-md:   0 4px 16px rgba(27,58,45,.10), 0 2px 6px rgba(0,0,0,.06);
+  --wlt-shadow-lg:   0 8px 32px rgba(27,58,45,.14), 0 4px 12px rgba(0,0,0,.08);
+  --wlt-shadow-hero: 0 16px 48px rgba(27,58,45,.30), 0 6px 20px rgba(0,0,0,.14);
+
+  /* Radii */
+  --wlt-r-sm:   0.75rem;   /* 12px */
+  --wlt-r-md:   1rem;      /* 16px */
+  --wlt-r-lg:   1.25rem;   /* 20px */
+  --wlt-r-xl:   1.5rem;    /* 24px */
+  --wlt-r-2xl:  1.75rem;   /* 28px */
+  --wlt-r-3xl:  2rem;      /* 32px */
+
+  /* Easing */
+  --wlt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  display: block;
+}
+
+/* ── Reset scoped to component ────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.wlt-page {
+  min-height: 100dvh;
+  background: var(--wlt-bg);
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  padding: 1.25rem 1rem 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   HERO BALANCE CARD
+   ════════════════════════════════════════════════════════════════════════════ */
+.wlt-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--wlt-r-3xl);
+  min-height: 11rem;
+  padding: 1.5rem 1.5rem 1.75rem;
+  background:
+    linear-gradient(140deg, #1B3A2D 0%, #2E5C44 55%, #1a4a37 100%);
+  box-shadow: var(--wlt-shadow-hero);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Decorative rings — organic, not geometric defaultish concentric circles */
+.wlt-hero__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+
+.wlt-hero__ring:nth-child(1) {
+  width: 18rem;
+  height: 18rem;
+  bottom: -9rem;
+  right: -6rem;
+}
+
+.wlt-hero__ring--2 {
+  width: 12rem;
+  height: 12rem;
+  bottom: -5rem;
+  right: -2rem;
+  border-color: rgba(255,255,255,0.05);
+}
+
+/* Eye button */
+.wlt-hero__eye {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 2;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s var(--wlt-ease), transform 0.2s var(--wlt-ease);
+}
+
+.wlt-hero__eye:hover {
+  background: rgba(255,255,255,0.18);
+  transform: scale(1.08);
+}
+
+.wlt-hero__eye:active {
+  transform: scale(0.96);
+}
+
+/* Label */
+.wlt-hero__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-top: 0.25rem;
+}
+
+/* Balance */
+.wlt-hero__balance {
+  margin: 0.3rem 0 0.75rem;
+}
+
+.wlt-hero__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.wlt-hero__amount--hidden {
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.70);
+}
+
+/* Chips row */
+.wlt-hero__chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+/* ── Pill chips ───────────────────────────────────────────────────────────── */
+.wlt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wlt-chip lucide-icon {
+  flex-shrink: 0;
+}
+
+.wlt-chip--green {
+  background: rgba(74, 200, 120, 0.20);
+  color: #7DEBA0;
+}
+
+.wlt-chip--ghost {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.80);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   QUICK ACTIONS
+   ════════════════════════════════════════════════════════════════════════════ */
+.wlt-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.wlt-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 0.25rem;
+  background: var(--wlt-white);
+  border-radius: var(--wlt-r-2xl);
+  box-shadow: var(--wlt-shadow-sm);
+  transition:
+    transform 0.22s var(--wlt-ease),
+    box-shadow 0.22s var(--wlt-ease);
+}
+
+.wlt-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wlt-shadow-md);
+}
+
+.wlt-action-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--wlt-shadow-sm);
+}
+
+.wlt-action-btn__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--wlt-green-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+}
+
+.wlt-action-btn:hover .wlt-action-btn__icon {
+  background: var(--wlt-cream-100);
+}
+
+.wlt-action-btn__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CONTENT COLUMNS (mobile: stacked / desktop: side-by-side)
+   ════════════════════════════════════════════════════════════════════════════ */
+.wlt-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wlt-col {
+  width: 100%;
+}
+
+/* ── Section header ───────────────────────────────────────────────────────── */
+.wlt-section {
+  margin-bottom: 1.75rem;
+}
+
+.wlt-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+  padding: 0 0.25rem;
+}
+
+.wlt-section__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.wlt-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--wlt-green-900);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--wlt-r-sm);
+  transition: background 0.15s;
+}
+
+.wlt-see-all:hover {
+  background: var(--wlt-green-light);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GROUP CARDS — horizontal scroll
+   ════════════════════════════════════════════════════════════════════════════ */
+.wlt-groups-track {
+  display: flex;
+  gap: 0.875rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.25rem 0.75rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.wlt-groups-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* wlt-skeleton: .wlt-group-card placeholder - swap @for for real data */
+.wlt-group-card {
+  position: relative;
+  flex-shrink: 0;
+  width: 9.5rem;
+  background: var(--wlt-white);
+  border-radius: var(--wlt-r-2xl);
+  box-shadow: var(--wlt-shadow-sm);
+  scroll-snap-align: start;
+  overflow: hidden;
+  transition: transform 0.22s var(--wlt-ease), box-shadow 0.22s var(--wlt-ease);
+  cursor: pointer;
+}
+
+.wlt-group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wlt-shadow-md);
+}
+
+.wlt-group-card:active {
+  transform: translateY(0);
+}
+
+/* Left accent bar */
+.wlt-group-card__accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+
+.wlt-group-card__body {
+  padding: 1rem 0.875rem 0.875rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.wlt-group-card__name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  line-height: 1.3;
+  margin-bottom: 0.35rem;
+  /* Prevent overflow on long names */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wlt-group-card__meta {
+  font-size: 0.65rem;
+  color: var(--wlt-text-muted);
+  font-weight: 500;
+  margin-top: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.wlt-group-card__amount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--wlt-green-900);
+  margin-top: 0.1rem;
+}
+
+.wlt-group-card__due {
+  font-size: 0.68rem;
+  color: var(--wlt-text-secondary);
+  font-weight: 500;
+}
+
+.wlt-group-card__rotation {
+  font-size: 0.63rem;
+  color: var(--wlt-text-muted);
+  text-align: right;
+  margin-top: 0.2rem;
+}
+
+/* ── Status chips ─────────────────────────────────────────────────────────── */
+.wlt-status-chip {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.wlt-status-chip--paid {
+  background: var(--wlt-green-light);
+  color: var(--wlt-green-500);
+}
+
+.wlt-status-chip--pending {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.wlt-status-chip--late {
+  background: var(--wlt-red-light);
+  color: var(--wlt-red);
+}
+
+/* ── Progress bar ─────────────────────────────────────────────────────────── */
+.wlt-progress {
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--wlt-cream-200);
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.wlt-progress__fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--wlt-green-900), var(--wlt-green-400));
+  transition: width 0.6s var(--wlt-ease);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   RECENT TRANSACTIONS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* White card wrapping all rows */
+.wlt-tx-card {
+  background: var(--wlt-white);
+  border-radius: var(--wlt-r-2xl);
+  box-shadow: var(--wlt-shadow-sm);
+  overflow: hidden;
+}
+
+/* wlt-skeleton: .wlt-tx-row placeholder - swap @for for real transactions */
+.wlt-tx-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  transition: background 0.15s;
+}
+
+.wlt-tx-row:hover {
+  background: var(--wlt-bg);
+}
+
+/* Divider */
+.wlt-tx-divider {
+  height: 1px;
+  background: var(--wlt-cream-100);
+  margin: 0 1.125rem;
+}
+
+/* Circle icon */
+.wlt-tx-row__icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wlt-tx-row__icon--credit {
+  background: var(--wlt-green-light);
+  color: var(--wlt-green-500);
+}
+
+.wlt-tx-row__icon--debit {
+  background: var(--wlt-red-light);
+  color: var(--wlt-red);
+}
+
+/* Label + group + date */
+.wlt-tx-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.wlt-tx-row__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wlt-tx-row__group {
+  font-size: 0.7rem;
+  color: var(--wlt-green-500);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wlt-tx-row__date {
+  font-size: 0.68rem;
+  color: var(--wlt-text-muted);
+}
+
+/* Amount */
+.wlt-tx-row__amount {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.wlt-tx-row__amount--credit {
+  color: var(--wlt-green-500);
+}
+
+.wlt-tx-row__amount--debit {
+  color: var(--wlt-red);
+}
+
+/* ── Safe-area spacer ─────────────────────────────────────────────────────── */
+.wlt-safe-area {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DESKTOP LAYOUT  >=1024px
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .wlt-page {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 2.5rem 2.5rem 0;
+  }
+
+  /* Hero: taller + more padding on desktop */
+  .wlt-hero {
+    min-height: 14rem;
+    padding: 2.25rem 2.5rem 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .wlt-hero__amount {
+    font-size: 2.75rem;
+  }
+
+  /* Actions: 2×2 grid on desktop (within left column) */
+  .wlt-actions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 0;
+  }
+
+  .wlt-action-btn {
+    padding: 1.25rem;
+  }
+
+  .wlt-action-btn__icon {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .wlt-action-btn__label {
+    font-size: 0.78rem;
+  }
+
+  /* Side-by-side columns */
+  .wlt-content {
+    display: grid;
+    grid-template-columns: 40% 1fr;
+    gap: 1.75rem;
+    align-items: start;
+    margin-top: 1.75rem;
+  }
+
+  .wlt-col--left {
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  /* Desktop: groups — allow a bit more width per card and wrap more gracefully */
+  .wlt-groups-track {
+    flex-wrap: nowrap;
+  }
+
+  .wlt-group-card {
+    width: 10.5rem;
+  }
+
+  /* Desktop: transactions list slightly taller row */
+  .wlt-tx-row {
+    padding: 1.125rem 1.375rem;
+  }
+
+  .wlt-tx-row__label {
+    font-size: 0.9rem;
+  }
+
+  .wlt-tx-row__amount {
+    font-size: 0.95rem;
+  }
+}
+
+/* ── Focus styles (accessibility) ────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--wlt-green-500);
+  outline-offset: 2px;
+  border-radius: var(--wlt-r-sm);
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .wlt-action-btn,
+  .wlt-group-card,
+  .wlt-hero__eye,
+  .wlt-progress__fill {
+    transition: none;
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MODAL SYSTEM  ·  Deposit & Withdrawal
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop ─────────────────────────────────────────────────────────────── */
+.wlt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.50);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: wlt-backdrop-in 0.25s var(--wlt-ease);
+}
+
+@keyframes wlt-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal sheet ──────────────────────────────────────────────────────────── */
+.wlt-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  background: var(--wlt-white);
+  border-radius: var(--wlt-r-3xl) var(--wlt-r-3xl) 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: wlt-modal-up 0.32s var(--wlt-ease);
+  box-shadow: 0 -8px 48px rgba(27,58,45,.18);
+}
+
+@keyframes wlt-modal-up {
+  from { transform: translateY(100%); opacity: 0.6; }
+  to   { transform: translateY(0);    opacity: 1;   }
+}
+
+/* Drag handle */
+.wlt-modal::before {
+  content: '';
+  display: block;
+  width: 2.5rem;
+  height: 4px;
+  background: var(--wlt-cream-200);
+  border-radius: 9999px;
+  margin: 0.875rem auto 0;
+  flex-shrink: 0;
+}
+
+/* ── Modal header ─────────────────────────────────────────────────────────── */
+.wlt-modal__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.375rem 1rem;
+  flex-shrink: 0;
+}
+
+.wlt-modal__close,
+.wlt-modal__back {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--wlt-cream-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.wlt-modal__back {
+  right: auto;
+  left: 1rem;
+}
+
+.wlt-modal__close:hover,
+.wlt-modal__back:hover {
+  background: var(--wlt-cream-200);
+}
+
+.wlt-modal__header-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--wlt-r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wlt-modal__header-icon--green { background: var(--wlt-green-900); }
+.wlt-modal__header-icon--red   { background: var(--wlt-red);       }
+
+.wlt-modal__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.wlt-modal__subtitle {
+  font-size: 0.75rem;
+  color: var(--wlt-text-secondary);
+  margin-top: 0.1rem;
+}
+
+/* ── Modal body ───────────────────────────────────────────────────────────── */
+.wlt-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 1.375rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wlt-modal__body::-webkit-scrollbar { width: 4px; }
+.wlt-modal__body::-webkit-scrollbar-track { background: transparent; }
+.wlt-modal__body::-webkit-scrollbar-thumb { background: var(--wlt-cream-200); border-radius: 9999px; }
+
+.wlt-modal__body--success {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 2rem 1.375rem;
+}
+
+/* ── Modal footer ─────────────────────────────────────────────────────────── */
+.wlt-modal__footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.375rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wlt-cream-100);
+  flex-shrink: 0;
+  background: var(--wlt-white);
+}
+
+.wlt-modal__footer--center {
+  justify-content: center;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.wlt-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 3rem;
+  border-radius: var(--wlt-r-xl);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: transform 0.18s var(--wlt-ease), box-shadow 0.18s var(--wlt-ease), background 0.15s;
+  cursor: pointer;
+}
+
+.wlt-btn:hover  { transform: translateY(-1px); }
+.wlt-btn:active { transform: translateY(0);    }
+
+.wlt-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.wlt-btn--primary {
+  background: var(--wlt-green-900);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(27,58,45,.25);
+  max-width: 14rem;
+}
+
+.wlt-btn--primary:hover:not(:disabled) {
+  background: var(--wlt-green-700);
+  box-shadow: 0 6px 20px rgba(27,58,45,.32);
+}
+
+.wlt-btn--danger {
+  background: var(--wlt-red);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(192,57,43,.25);
+  max-width: 14rem;
+}
+
+.wlt-btn--danger:hover:not(:disabled) {
+  background: #a93226;
+  box-shadow: 0 6px 20px rgba(192,57,43,.32);
+}
+
+.wlt-btn--ghost {
+  background: var(--wlt-cream-100);
+  color: var(--wlt-text-primary);
+  max-width: 8rem;
+}
+
+.wlt-btn--ghost:hover:not(:disabled) {
+  background: var(--wlt-cream-200);
+}
+
+/* ── Form groups ──────────────────────────────────────────────────────────── */
+.wlt-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.wlt-form-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.wlt-form-hint {
+  font-size: 0.72rem;
+  color: var(--wlt-text-muted);
+}
+
+.wlt-form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--wlt-red);
+  font-weight: 500;
+}
+
+/* ── Amount input ─────────────────────────────────────────────────────────── */
+.wlt-amount-input-wrap {
+  position: relative;
+}
+
+.wlt-amount-input {
+  width: 100%;
+  height: 3.5rem;
+  border-radius: var(--wlt-r-lg);
+  border: 2px solid var(--wlt-cream-200);
+  background: var(--wlt-bg);
+  padding: 0 4.5rem 0 1.125rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  letter-spacing: -0.02em;
+  outline: none;
+  transition: border-color 0.18s;
+  font-family: inherit;
+}
+
+.wlt-amount-input:focus {
+  border-color: var(--wlt-green-900);
+  background: var(--wlt-white);
+}
+
+.wlt-amount-input--error {
+  border-color: var(--wlt-red) !important;
+}
+
+.wlt-amount-input__currency {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--wlt-text-muted);
+  pointer-events: none;
+}
+
+/* ── Quick amounts ────────────────────────────────────────────────────────── */
+.wlt-quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.wlt-quick-amt {
+  height: 2.25rem;
+  border-radius: var(--wlt-r-md);
+  background: var(--wlt-bg);
+  border: 1.5px solid var(--wlt-cream-200);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+  cursor: pointer;
+  transition: all 0.15s var(--wlt-ease);
+  font-family: inherit;
+}
+
+.wlt-quick-amt:hover:not(:disabled) {
+  border-color: var(--wlt-green-900);
+  color: var(--wlt-green-900);
+  background: var(--wlt-green-light);
+}
+
+.wlt-quick-amt--active {
+  border-color: var(--wlt-green-900) !important;
+  background: var(--wlt-green-900) !important;
+  color: #fff !important;
+}
+
+.wlt-quick-amt--disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* ── Method / destination selector ───────────────────────────────────────── */
+.wlt-method-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wlt-method-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 3rem;
+  padding: 0 1rem;
+  border-radius: var(--wlt-r-lg);
+  border: 1.5px solid var(--wlt-cream-200);
+  background: var(--wlt-bg);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.wlt-method-btn:hover {
+  border-color: var(--wlt-green-500);
+}
+
+.wlt-method-btn--active {
+  border-color: var(--wlt-green-900);
+  background: var(--wlt-green-light);
+}
+
+.wlt-method-btn__dot {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--wlt-cream-200);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.wlt-method-btn--active .wlt-method-btn__dot {
+  border-color: var(--wlt-green-900);
+  background: var(--wlt-green-900);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.wlt-method-btn__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+}
+
+/* ── Phone input ──────────────────────────────────────────────────────────── */
+.wlt-phone-input-wrap {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  border-radius: var(--wlt-r-lg);
+  border: 2px solid var(--wlt-cream-200);
+  background: var(--wlt-bg);
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+
+.wlt-phone-input-wrap:focus-within {
+  border-color: var(--wlt-green-900);
+  background: var(--wlt-white);
+}
+
+.wlt-phone-input__prefix {
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--wlt-text-secondary);
+  border-right: 1px solid var(--wlt-cream-200);
+  white-space: nowrap;
+}
+
+.wlt-phone-input {
+  flex: 1;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+/* ── Textarea ─────────────────────────────────────────────────────────────── */
+.wlt-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--wlt-r-lg);
+  border: 2px solid var(--wlt-cream-200);
+  background: var(--wlt-bg);
+  font-size: 0.875rem;
+  color: var(--wlt-text-primary);
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  transition: border-color 0.18s;
+  line-height: 1.5;
+}
+
+.wlt-textarea:focus {
+  border-color: var(--wlt-green-900);
+  background: var(--wlt-white);
+}
+
+/* ── Balance pill (in withdraw form) ─────────────────────────────────────── */
+.wlt-balance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px;
+  background: var(--wlt-green-light);
+  font-size: 0.78rem;
+  color: var(--wlt-green-500);
+  font-weight: 500;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.wlt-balance-pill strong {
+  color: var(--wlt-green-900);
+  font-weight: 700;
+}
+
+/* ── Confirm summary ──────────────────────────────────────────────────────── */
+.wlt-confirm-summary {
+  background: var(--wlt-bg);
+  border-radius: var(--wlt-r-xl);
+  padding: 0.25rem 0;
+  border: 1px solid var(--wlt-cream-200);
+  overflow: hidden;
+}
+
+.wlt-confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.125rem;
+}
+
+.wlt-confirm-row__label {
+  font-size: 0.8rem;
+  color: var(--wlt-text-secondary);
+  font-weight: 500;
+}
+
+.wlt-confirm-row__value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--wlt-text-primary);
+  text-align: right;
+}
+
+.wlt-confirm-row__value--big {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.wlt-confirm-row__value--green { color: var(--wlt-green-500); }
+.wlt-confirm-row__value--red   { color: var(--wlt-red);       }
+
+.wlt-confirm-divider {
+  height: 1px;
+  background: var(--wlt-cream-200);
+  margin: 0 1.125rem;
+}
+
+/* ── Success state ────────────────────────────────────────────────────────── */
+.wlt-success-icon {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: var(--wlt-green-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  animation: wlt-pop 0.4s var(--wlt-ease);
+}
+
+@keyframes wlt-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+.wlt-success-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--wlt-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.wlt-success-amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--wlt-green-500);
+  letter-spacing: -0.03em;
+  margin-top: 0.25rem;
+}
+
+.wlt-success-amount--debit {
+  color: var(--wlt-red);
+}
+
+.wlt-success-balance {
+  font-size: 0.8rem;
+  color: var(--wlt-text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.wlt-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: wlt-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.wlt-spinner--white {
+  border-color: rgba(255,255,255,0.3);
+  border-top-color: #fff;
+}
+
+@keyframes wlt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Desktop modal: centered dialog instead of bottom sheet ──────────────── */
+@media (min-width: 1024px) {
+  .wlt-modal-backdrop {
+    align-items: center;
+    padding: 2rem;
+  }
+
+  .wlt-modal {
+    border-radius: var(--wlt-r-3xl);
+    max-height: 88vh;
+    animation: wlt-modal-center-in 0.28s var(--wlt-ease);
+  }
+
+  @keyframes wlt-modal-center-in {
+    from { transform: scale(0.96) translateY(8px); opacity: 0; }
+    to   { transform: scale(1)    translateY(0);   opacity: 1; }
+  }
+
+  .wlt-modal::before { display: none; }
+
+  .wlt-modal__footer {
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   HISTORY MODAL ADDITIONS  ·  append to wallet.css
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Taller modal for history so the list has room */
+.wlt-modal--history {
+  max-height: 96dvh;
+}
+
+/* ── Filter tabs ──────────────────────────────────────────────────────────── */
+.wlt-history-filters {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0 1.375rem 0.875rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.wlt-history-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.wlt-history-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--wlt-text-secondary);
+  background: var(--wlt-cream-100);
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s var(--wlt-ease);
+}
+
+.wlt-history-filter-btn:hover {
+  background: var(--wlt-cream-200);
+  color: var(--wlt-text-primary);
+}
+
+.wlt-history-filter-btn--active {
+  background: var(--wlt-green-900);
+  color: #fff;
+  border-color: var(--wlt-green-900);
+}
+
+.wlt-history-filter-btn--active:hover {
+  background: var(--wlt-green-700);
+  color: #fff;
+}
+
+/* Count badge inside active filter button */
+.wlt-history-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── History modal body ───────────────────────────────────────────────────── */
+.wlt-modal__body--history {
+  padding-top: 0;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.wlt-history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--wlt-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}/* ════════════════════════════════════════════════════════════════════════════
+   HISTORY MODAL ADDITIONS  ·  append to wallet.css
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Taller modal for history so the list has room */
+.wlt-modal--history {
+  max-height: 96dvh;
+}
+
+/* ── Filter tabs ──────────────────────────────────────────────────────────── */
+.wlt-history-filters {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0 1.375rem 0.875rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.wlt-history-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.wlt-history-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--wlt-text-secondary);
+  background: var(--wlt-cream-100);
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s var(--wlt-ease);
+}
+
+.wlt-history-filter-btn:hover {
+  background: var(--wlt-cream-200);
+  color: var(--wlt-text-primary);
+}
+
+.wlt-history-filter-btn--active {
+  background: var(--wlt-green-900);
+  color: #fff;
+  border-color: var(--wlt-green-900);
+}
+
+.wlt-history-filter-btn--active:hover {
+  background: var(--wlt-green-700);
+  color: #fff;
+}
+
+/* Count badge inside active filter button */
+.wlt-history-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── History modal body ───────────────────────────────────────────────────── */
+.wlt-modal__body--history {
+  padding-top: 0;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.wlt-history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--wlt-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PIN MODAL ADDITIONS  ·  append to wallet.css
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Compact modal for PIN */
+.wlt-modal--pin {
+  max-width: 360px;
+}
+
+/* Pin body: centered layout */
+.wlt-modal__body--pin {
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1.375rem;
+  gap: 1rem;
+}
+
+/* 4-dot indicator */
+.wlt-pin-dots {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.wlt-pin-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid #E5DDD3;
+  background: transparent;
+  transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wlt-pin-dot--filled {
+  background: #1B3A2D;
+  border-color: #1B3A2D;
+  transform: scale(1.1);
+}
+
+/* PIN error */
+.wlt-pin-error {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #C0392B;
+  font-weight: 500;
+  animation: wlt-shake 0.35s ease;
+}
+
+@keyframes wlt-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  60%       { transform: translateX(6px); }
+}
+
+/* Numpad grid */
+.wlt-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.wlt-numpad-key {
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: #F7F3ED;
+  border: 1.5px solid #E5DDD3;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1A1A1A;
+  cursor: pointer;
+  transition: all 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.wlt-numpad-key:hover:not(:disabled) {
+  background: #EBF5EF;
+  border-color: #1B3A2D;
+  color: #1B3A2D;
+  transform: scale(1.04);
+}
+
+.wlt-numpad-key:active:not(:disabled) {
+  transform: scale(0.96);
+  background: #1B3A2D;
+  color: #fff;
+  border-color: #1B3A2D;
+}
+
+.wlt-numpad-key:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.wlt-numpad-key--del {
+  font-size: 1.1rem;
+  color: #6B6B6B;
+}
+
+.wlt-numpad-key--del:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: #C0392B;
+  color: #C0392B;
+}
+
+.wlt-numpad-spacer {
+  /* empty grid cell */
+}
+
+/* Hidden balance — make it look clickable */
+.wlt-hero__amount--hidden {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.70);
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+
+.wlt-hero__amount--hidden:hover {
+  color: rgba(255,255,255,0.90);
+}

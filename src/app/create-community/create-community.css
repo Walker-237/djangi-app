@@ -1,0 +1,130 @@
+/* ── WRAPPER ── */
+.cg-wrap {
+  min-height: 100svh;
+  background: #F7F3ED;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 5rem;
+}
+
+/* ── HEADER ── */
+.cg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #E5E7EB;
+  background: #ffffff;
+}
+
+.cg-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: #F3F4F6;
+  border: none;
+  color: #1B3A2D;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cg-back-btn:hover {
+  background: #E5E7EB;
+}
+
+.cg-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1B3A2D;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+/* ── FORM ── */
+.cg-form {
+  flex: 1;
+  padding: 1.5rem 1.25rem 2rem;
+}
+
+.cg-field {
+  margin-bottom: 1.5rem;
+}
+
+.cg-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.cg-input,
+.cg-select {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  color: #1B3A2D;
+  background: #ffffff;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.cg-input:focus,
+.cg-select:focus {
+  outline: none;
+  border-color: #1B3A2D;
+  box-shadow: 0 0 0 3px rgba(27, 58, 45, 0.08);
+}
+
+.cg-input::placeholder {
+  color: #9CA3AF;
+}
+
+.cg-textarea {
+  resize: vertical;
+  min-height: 5rem;
+  line-height: 1.5;
+}
+
+/* ── FOOTER (fixed) ── */
+.cg-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, #F7F3ED 60%, rgba(247, 243, 237, 0));
+  z-index: 50;
+}
+
+.cg-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border-radius: 1rem;
+  background: #1B3A2D;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.cg-submit-btn:hover {
+  background: #142c22;
+  transform: translateY(-1px);
+}
+
+.cg-submit-btn:active {
+  transform: translateY(0);
+}

@@ -1,0 +1,174 @@
+<div class="min-h-screen max-w-full overflow-x-hidden bg-[#F7F3ED] pb-24 lg:pb-10">
+
+  <header class="px-5 pt-6 pb-4 lg:px-10 lg:pt-10">
+    <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#C9A84C]">
+      {{ language() === 'fr' ? 'Apercu' : 'Overview' }}
+    </p>
+    <div class="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-[#1B3A2D] lg:text-3xl">
+          {{ language() === 'fr' ? 'Tableau de bord' : 'Dashboard' }}
+        </h1>
+        <p class="mt-1 text-sm text-[#6B7280]">
+          {{ language() === 'fr'
+            ? 'Suivez vos communautes, groupes actifs et prochains paiements.'
+            : 'Track your communities, active groups and upcoming payouts.' }}
+        </p>
+      </div>
+
+      <a
+        routerLink="/app/communities"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1B3A2D] px-4 text-sm font-semibold text-white transition hover:bg-[#142c22]"
+      >
+        {{ language() === 'fr' ? 'Explorer' : 'Explore' }}
+        <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
+      </a>
+    </div>
+  </header>
+
+  <section class="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-10">
+    <article class="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1B3A2D]/10 text-[#1B3A2D]">
+        <lucide-icon name="layers" [size]="19" aria-hidden="true"></lucide-icon>
+      </div>
+      <p class="mt-4 text-2xl font-semibold text-[#1B3A2D]">{{ communities().length }}</p>
+      <p class="mt-1 text-xs font-medium text-[#6B7280]">
+        {{ language() === 'fr' ? 'Communautes' : 'Communities' }}
+      </p>
+    </article>
+
+    <article class="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C9A84C]/15 text-[#8A6A18]">
+        <lucide-icon name="circle-dollar-sign" [size]="19" aria-hidden="true"></lucide-icon>
+      </div>
+      <p class="mt-4 text-2xl font-semibold text-[#1B3A2D]">{{ groups().length }}</p>
+      <p class="mt-1 text-xs font-medium text-[#6B7280]">
+        {{ language() === 'fr' ? 'Groupes actifs' : 'Active groups' }}
+      </p>
+    </article>
+
+    <article class="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1B3A2D]/10 text-[#1B3A2D]">
+        <lucide-icon name="users" [size]="19" aria-hidden="true"></lucide-icon>
+      </div>
+      <p class="mt-4 text-2xl font-semibold text-[#1B3A2D]">{{ totalMembers().toLocaleString('fr-FR') }}</p>
+      <p class="mt-1 text-xs font-medium text-[#6B7280]">
+        {{ language() === 'fr' ? 'Membres' : 'Members' }}
+      </p>
+    </article>
+
+    <article class="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C9A84C]/15 text-[#8A6A18]">
+        <lucide-icon name="wallet" [size]="19" aria-hidden="true"></lucide-icon>
+      </div>
+      <p class="mt-4 break-words text-base font-semibold text-[#1B3A2D] sm:text-lg">{{ formatAmount(totalSavings()) }}</p>
+      <p class="mt-1 text-xs font-medium text-[#6B7280]">FCFA {{ language() === 'fr' ? 'epargnes' : 'saved' }}</p>
+    </article>
+  </section>
+
+  <section class="mt-6 grid grid-cols-1 gap-5 px-5 lg:grid-cols-[1.25fr_0.75fr] lg:px-10">
+    <article class="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold text-[#1B3A2D]">
+            {{ language() === 'fr' ? 'Prochains paiements' : 'Upcoming payouts' }}
+          </h2>
+          <p class="mt-1 text-xs text-[#6B7280]">
+            {{ language() === 'fr' ? 'Les rotations les plus proches.' : 'The nearest group rotations.' }}
+          </p>
+        </div>
+        <a routerLink="/app/my-groups" class="text-sm font-semibold text-[#1B3A2D] hover:text-[#C9A84C]">
+          {{ language() === 'fr' ? 'Voir tout' : 'View all' }}
+        </a>
+      </div>
+
+      <div class="mt-5 flex flex-col divide-y divide-[#E5E7EB]">
+        @for (group of nextPayouts(); track group.id) {
+          <a
+            [routerLink]="['/app/groups', group.id]"
+            class="grid min-w-0 grid-cols-[auto_1fr] gap-3 py-4 transition hover:bg-[#FAFAF8] sm:grid-cols-[auto_1fr_auto] sm:items-center"
+          >
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1B3A2D] text-white">
+              <lucide-icon name="calendar-clock" [size]="19" aria-hidden="true"></lucide-icon>
+            </div>
+            <div class="min-w-0">
+              <h3 class="truncate text-sm font-semibold text-[#1B3A2D]">{{ group.name }}</h3>
+              <p class="mt-1 text-xs text-[#6B7280]">
+                {{ frequencyLabel(group) }} - {{ formatAmount(group.contributionAmount) }} {{ group.currency }}
+              </p>
+            </div>
+            <div class="col-span-2 text-left sm:col-span-1 sm:text-right">
+              <p class="text-sm font-semibold text-[#1B3A2D]">{{ formatDate(group.nextPayoutDate) }}</p>
+              <p class="mt-1 text-xs text-[#6B7280]">{{ formatAmount(group.totalPot) }} {{ group.currency }}</p>
+            </div>
+          </a>
+        }
+      </div>
+    </article>
+
+    <article class="rounded-2xl border border-[#E5E7EB] bg-[#1B3A2D] p-5 text-white shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+          <lucide-icon name="bell" [size]="19" aria-hidden="true"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-semibold">
+            {{ language() === 'fr' ? 'Action du jour' : 'Today action' }}
+          </h2>
+          <p class="mt-1 text-xs text-white/65">
+            {{ language() === 'fr' ? 'Gardez vos tontines a jour.' : 'Keep your savings circles current.' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl bg-white/10 p-4">
+        <p class="text-sm font-semibold">
+          {{ language() === 'fr' ? 'Verifier les prochaines contributions' : 'Review upcoming contributions' }}
+        </p>
+        <p class="mt-2 text-sm leading-6 text-white/70">
+          {{ language() === 'fr'
+            ? 'Vos groupes actifs ont des rotations planifiees cette semaine.'
+            : 'Your active groups have scheduled rotations this week.' }}
+        </p>
+      </div>
+
+      <a
+        routerLink="/app/my-groups"
+        class="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-semibold text-[#1B3A2D] transition hover:bg-[#F7F3ED]"
+      >
+        {{ language() === 'fr' ? 'Ouvrir mes groupes' : 'Open my groups' }}
+        <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
+      </a>
+    </article>
+  </section>
+
+  <section class="mt-6 px-5 lg:px-10">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="text-base font-semibold text-[#1B3A2D]">
+        {{ language() === 'fr' ? 'Communautes principales' : 'Top communities' }}
+      </h2>
+      <a routerLink="/app/communities" class="text-sm font-semibold text-[#1B3A2D] hover:text-[#C9A84C]">
+        {{ language() === 'fr' ? 'Explorer' : 'Explore' }}
+      </a>
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      @for (community of featuredCommunities(); track community.id) {
+        <a
+          routerLink="/app/communities"
+          class="min-w-0 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <p class="text-sm font-semibold text-[#1B3A2D]">
+            {{ language() === 'fr' ? community.nameFr : community.name }}
+          </p>
+          <p class="mt-2 text-xs text-[#6B7280]">{{ community.location }}</p>
+          <div class="mt-4 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <span class="font-medium text-[#6B7280]">{{ community.groupCount }} {{ language() === 'fr' ? 'groupes' : 'groups' }}</span>
+            <span class="break-words font-semibold text-[#1B3A2D]">{{ formatAmount(community.totalSavings) }} FCFA</span>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+
+</div>
