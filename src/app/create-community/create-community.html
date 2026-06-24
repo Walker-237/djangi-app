@@ -1,85 +1,57 @@
-<div class="cg-wrap">
+<div class="cg-wrap" style="padding-bottom: 120px;">
 
-  <!-- ── HEADER ── -->
+  <!-- HEADER -->
   <header class="cg-header">
     <button type="button" (click)="goBack()" class="cg-back-btn">
       <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
     </button>
-    <h1 class="cg-title">{{ language() === 'fr' ? 'Créer une communauté' : 'Create community' }}</h1>
+    <h1 class="cg-title">{{ language() === 'fr' ? 'Creer une communaute' : 'Create community' }}</h1>
     <div></div>
   </header>
 
   <form (ngSubmit)="onSubmit()" class="cg-form">
 
     <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Nom de la communauté (anglais)' : 'Community name (English)' }}</label>
-      <input
-        type="text"
-        [(ngModel)]="nameEn"
-        name="nameEn"
-        class="cg-input"
-        required
-      />
+      <label class="cg-label">{{ language() === 'fr' ? 'Nom (anglais)' : 'Community name (English)' }}</label>
+      <input type="text" [(ngModel)]="nameEn" name="nameEn" class="cg-input" required />
     </div>
 
     <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Nom de la communauté (français)' : 'Community name (French)' }}</label>
-      <input
-        type="text"
-        [(ngModel)]="nameFr"
-        name="nameFr"
-        class="cg-input"
-        required
-      />
+      <label class="cg-label">{{ language() === 'fr' ? 'Nom (francais)' : 'Community name (French)' }}</label>
+      <input type="text" [(ngModel)]="nameFr" name="nameFr" class="cg-input" />
     </div>
 
     <div class="cg-field">
       <label class="cg-label">{{ language() === 'fr' ? 'Description (anglais)' : 'Description (English)' }}</label>
-      <textarea
-        [(ngModel)]="descriptionEn"
-        name="descriptionEn"
-        class="cg-input cg-textarea"
-        required
-      ></textarea>
+      <textarea [(ngModel)]="descriptionEn" name="descriptionEn" class="cg-input cg-textarea" required></textarea>
     </div>
 
     <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Description (français)' : 'Description (French)' }}</label>
-      <textarea
-        [(ngModel)]="descriptionFr"
-        name="descriptionFr"
-        class="cg-input cg-textarea"
-        required
-      ></textarea>
+      <label class="cg-label">{{ language() === 'fr' ? 'Description (francais)' : 'Description (French)' }}</label>
+      <textarea [(ngModel)]="descriptionFr" name="descriptionFr" class="cg-input cg-textarea"></textarea>
     </div>
 
     <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Localisation' : 'Location' }}</label>
-      <input
-        type="text"
-        [(ngModel)]="locationValue"
-        name="locationValue"
-        class="cg-input"
-        required
-      />
+      <label class="cg-label">{{ language() === 'fr' ? 'Image de la communaute' : 'Community image' }}</label>
+      @if (imagePreview()) {
+        <img [src]="imagePreview()" alt="Preview" style="width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px;" />
+      }
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:12px;border:2px dashed #D1D5DB;border-radius:12px;justify-content:center;">
+        <lucide-icon name="upload" [size]="18" style="color:#6B7280;"></lucide-icon>
+        <span style="font-size:14px;color:#6B7280;">{{ uploading() ? 'Uploading...' : (language() === 'fr' ? 'Choisir une image' : 'Choose image') }}</span>
+        <input type="file" accept="image/*" style="display:none;" (change)="onImagePicked($event)" [disabled]="uploading()" />
+      </label>
     </div>
 
-    <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'URL de l’image' : 'Image URL' }}</label>
-      <input
-        type="url"
-        [(ngModel)]="imageUrl"
-        name="imageUrl"
-        class="cg-input"
-        [placeholder]="language() === 'fr' ? 'Optionnel' : 'Optional'"
-      />
-    </div>
+    @if (error()) {
+      <p style="color:#DC2626;font-size:14px;font-weight:600;">{{ error() }}</p>
+    }
 
   </form>
 
-  <div class="cg-footer">
-    <button type="submit" (click)="onSubmit()" class="cg-submit-btn">
-      {{ language() === 'fr' ? 'Créer une communauté' : 'Create community' }}
+  <div class="cg-footer" style="position:fixed;bottom:70px;left:0;right:0;padding:16px 20px 32px;background:#FAFAF8;border-top:1px solid #E5E7EB;z-index:50;">
+    <button type="button" (click)="onSubmit()" [disabled]="loading() || uploading()" class="cg-submit-btn" style="width:100%;">
+      {{ loading() ? 'Creating...' : (language() === 'fr' ? 'Creer la communaute' : 'Create community') }}
     </button>
   </div>
 

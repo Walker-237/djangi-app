@@ -100,7 +100,7 @@ export class Header {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token'); localStorage.removeItem('pin_token'); localStorage.removeItem('current_user');
     this.showUserDropdown.set(false);
     this.showMobileMenu.set(false);
     this.router.navigate(['/auth/login']);
@@ -111,3 +111,5 @@ export class Header {
     this.showUserDropdown.set(false);
   }
 }
+
+

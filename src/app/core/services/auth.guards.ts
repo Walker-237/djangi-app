@@ -1,9 +1,9 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { hasStoredToken } from './auth-token';
+import { Router } from '@angular/router';
+import { TokenService } from './token.service';
 
-export const redirectAuthenticatedToDashboard: CanActivateFn = () => {
+export const redirectAuthenticatedToDashboard = () => {
   const router = inject(Router);
-  return hasStoredToken() ? router.parseUrl('/app/dashboard') : true;
+  const tokenService = inject(TokenService);
+  return tokenService.isAuthenticated() ? router.createUrlTree(['/app/dashboard']) : true;
 };
-

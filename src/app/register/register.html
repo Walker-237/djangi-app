@@ -1,0 +1,84 @@
+<section class="reg">
+  <div class="reg__visual" aria-hidden="true">
+    <img class="reg__image" src="/assets/image/Mobile login-pana.svg" alt="" />
+  </div>
+
+  <form class="reg__card" novalidate (submit)="register()">
+    <p class="reg__kicker">{{ labels().kicker }}</p>
+    <h1 class="reg__title">{{ labels().title }}</h1>
+    <p class="reg__subtitle">{{ labels().subtitle }}</p>
+
+    <label class="reg__field">
+      <span class="reg__label">{{ labels().name }}</span>
+      <span class="reg__input-wrap">
+        <lucide-icon name="badge-check" [size]="18" aria-hidden="true"></lucide-icon>
+        <input class="reg__input" type="text" autocomplete="name" [placeholder]="labels().namePlaceholder" />
+      </span>
+    </label>
+
+    <label class="reg__field">
+      <span class="reg__label">{{ labels().phone }}</span>
+      <span class="reg__input-wrap">
+        <lucide-icon name="phone" [size]="18" aria-hidden="true"></lucide-icon>
+        <input class="reg__input" type="tel" autocomplete="tel" [placeholder]="labels().phonePlaceholder" />
+      </span>
+    </label>
+
+    <label class="reg__field">
+      <span class="reg__label">{{ labels().email }}</span>
+      <span class="reg__input-wrap">
+        <lucide-icon name="mail" [size]="18" aria-hidden="true"></lucide-icon>
+        <input class="reg__input" type="email" autocomplete="email" [placeholder]="labels().emailPlaceholder" />
+      </span>
+    </label>
+
+    <label class="reg__field">
+      <span class="reg__label">{{ labels().password }}</span>
+      <span class="reg__input-wrap">
+        <lucide-icon name="lock-keyhole" [size]="18" aria-hidden="true"></lucide-icon>
+        <input
+          class="reg__input"
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="new-password"
+          [placeholder]="labels().passwordPlaceholder"
+        />
+        <button
+          class="reg__icon-btn"
+          type="button"
+          (click)="showPassword.update(value => !value)"
+          [attr.aria-label]="labels().showPassword"
+        >
+          <lucide-icon name="eye" [size]="18" aria-hidden="true"></lucide-icon>
+        </button>
+      </span>
+    </label>
+
+    <label class="reg__field">
+      <span class="reg__label">{{ labels().confirm }}</span>
+      <span class="reg__input-wrap">
+        <lucide-icon name="lock-keyhole" [size]="18" aria-hidden="true"></lucide-icon>
+        <input
+          class="reg__input"
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="new-password"
+          [placeholder]="labels().confirmPlaceholder"
+        />
+      </span>
+    </label>
+
+    <label class="reg__consent">
+      <input type="checkbox" />
+      <span>{{ labels().consent }}</span>
+    </label>
+
+    <button class="reg__submit" type="submit">
+      {{ labels().submit }}
+      <lucide-icon name="arrow-right" [size]="18" aria-hidden="true"></lucide-icon>
+    </button>
+
+    <p class="reg__switch">
+      {{ labels().switchText }}
+      <a routerLink="/auth/login">{{ labels().switchLink }}</a>
+    </p>
+  </form>
+</section>

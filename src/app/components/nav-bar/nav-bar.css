@@ -31,7 +31,7 @@ app-top-nav {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
 
     position: fixed;
     bottom: calc(16px + env(safe-area-inset-bottom));
@@ -51,7 +51,7 @@ app-top-nav {
       0 2px 8px rgba(0, 0, 0, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-    padding: 6px 8px;
+    padding: 6px;
     width: max-content;
     max-width: calc(100vw - 32px);
   }
@@ -64,8 +64,8 @@ app-top-nav {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 8px 16px;
-  min-width: 60px;
+  padding: 7px 8px;
+  min-width: 45px;
 
   color: #9CA3AF;
   text-decoration: none;
@@ -173,7 +173,7 @@ app-top-nav {
 
 /* ── Label ── */
 .bn-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;

@@ -461,10 +461,38 @@ button {
   gap: 0.875rem;
   padding: 1rem 1.125rem;
   transition: background 0.15s;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 
 .wlt-tx-row:hover {
   background: var(--wlt-bg);
+}
+
+.wlt-receipt-logo {
+  width: 72px;
+  height: auto;
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.wlt-receipt-preview {
+  display: grid;
+  gap: 1rem;
+}
+
+.wlt-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--wlt-cream-100);
+}
+
+.wlt-receipt-row:last-child {
+  border-bottom: none;
 }
 
 /* Divider */

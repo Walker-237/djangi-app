@@ -1,14 +1,17 @@
 import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
+  DestroyRef,
   ViewEncapsulation,
   computed,
   inject,
   PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import {
   LUCIDE_ICONS,
   LucideIconProvider,
@@ -22,10 +25,12 @@ import {
 } from 'lucide-angular';
 import { Header } from '../components/header/header';
 import { LanguageService } from '../core/services/language.service';
+import { AuthService } from '../core/services/auth.service';
 
 type Mode = 'login' | 'register';
 type Language = 'en' | 'fr';
 type FieldIcon = 'mail' | 'lock-keyhole' | 'phone' | 'badge-check';
+type AuthStep = 'phone' | 'otp' | 'pinSetup' | 'pinVerify';
 
 interface FieldCopy {
   label: string;
@@ -256,7 +261,7 @@ const COPY: Record<Language, AuthCopy> = {
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, Header],
+  imports: [RouterLink, RouterLinkActive, Header, FormsModule],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -280,12 +285,20 @@ export class Auth {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly languageService = inject(LanguageService);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   mode = signal<Mode>(this.router.url.includes('/register') ? 'register' : 'login');
   language = this.languageService.language;
 
   copy = computed<AuthCopy>(() => COPY[this.language()]);
   page = computed<PageCopy>(() => this.copy()[this.mode()]);
+  authStep = signal<AuthStep>('phone');
+  phoneNumber = signal('');
+  otp = signal('');
+  pin = signal('');
+  loading = signal(false);
+  error = signal<string | null>(null);
 
   setLanguage(lang: Language): void {
     this.languageService.setLanguage(lang);
@@ -293,18 +306,112 @@ export class Auth {
 
   setMode(mode: Mode): void {
     this.mode.set(mode);
+    this.authStep.set('phone');
+    this.error.set(null);
+  }
+
+  onFieldInput(field: FieldCopy, value: string): void {
+    const label = field.label.toLowerCase();
+    if (field.type === 'tel' || label.includes('phone') || label.includes('telephone') || label.includes('email')) {
+      this.phoneNumber.set(value);
+    }
+    if (field.type === 'password') {
+      this.pin.set(value);
+    }
+    this.error.set(null);
+  }
+
+  fieldValue(field: FieldCopy): string {
+    const label = field.label.toLowerCase();
+    if (field.type === 'tel' || label.includes('phone') || label.includes('telephone') || label.includes('email')) return this.phoneNumber();
+    if (field.type === 'password') return this.pin();
+    return '';
   }
 
   handleSubmit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(
-        'token',
-        JSON.stringify({
-          accessToken: 'mock-token-' + Date.now(),
-          tokenType: 'Bearer',
-        }),
-      );
+    if (this.loading()) return;
+    this.error.set(null);
+    let phoneNumber = this.phoneNumber().trim();
+    if (phoneNumber && !phoneNumber.startsWith('+')) {
+      phoneNumber = '+237' + phoneNumber;
     }
-    this.router.navigate(['/app/dashboard']);
+    if (!phoneNumber) {
+      this.error.set(this.language() === 'fr' ? 'Veuillez entrer votre numero de telephone.' : 'Please enter your phone number.');
+      return;
+    }
+
+    if (this.authStep() === 'phone') {
+      this.loading.set(true);
+      if (this.mode() === 'login') {
+        // Login: skip OTP, go straight to PIN
+        this.loading.set(false);
+        this.authStep.set('pinVerify');
+        return;
+      }
+      // Register: send OTP first
+      this.authService.requestOtp(phoneNumber)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => { this.authStep.set('otp'); this.loading.set(false); },
+          error: () => this.setError(this.language() === 'fr' ? 'Impossible d envoyer le code OTP.' : 'Unable to send OTP.'),
+        });
+      return;
+    }
+
+    if (this.authStep() === 'otp') {
+      if (!this.otp().trim()) {
+        this.error.set(this.language() === 'fr' ? 'Veuillez entrer le code OTP.' : 'Please enter the OTP code.');
+        return;
+      }
+      this.loading.set(true);
+      this.authService.verifyOtp(phoneNumber, this.otp().trim())
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            this.loading.set(false);
+            if (response.isNewUser || !response.user.pinSet) {
+              this.authStep.set('pinSetup');
+              return;
+            }
+            this.router.navigate(['/app/dashboard']);
+          },
+          error: () => this.setError(this.language() === 'fr' ? 'Code OTP invalide.' : 'Invalid OTP code.'),
+        });
+      return;
+    }
+
+    if (this.authStep() === 'pinSetup') {
+      if (this.pin().trim().length < 4) {
+        this.error.set(this.language() === 'fr' ? 'Veuillez definir un PIN valide.' : 'Please set a valid PIN.');
+        return;
+      }
+      this.loading.set(true);
+      this.authService.setPin(this.pin().trim())
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.router.navigate(['/app/dashboard']),
+          error: () => this.setError(this.language() === 'fr' ? 'Impossible de definir le PIN.' : 'Unable to set PIN.'),
+        });
+      return;
+    }
+
+    if (this.authStep() === 'pinVerify') {
+      if (!this.pin().trim()) {
+        this.error.set(this.language() === 'fr' ? 'Veuillez entrer votre PIN.' : 'Please enter your PIN.');
+        return;
+      }
+      this.loading.set(true);
+      this.authService.pinLogin(phoneNumber, this.pin().trim())
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.router.navigate(['/app/dashboard']),
+          error: () => this.setError(this.language() === 'fr' ? 'Numero ou PIN invalide.' : 'Invalid phone or PIN.'),
+        });
+    }
+  }
+
+  private setError(message: string): void {
+    this.error.set(message);
+    this.loading.set(false);
   }
 }

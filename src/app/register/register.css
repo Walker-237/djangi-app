@@ -1,0 +1,142 @@
+.reg {
+  width: min(1000px, 100%);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.reg__visual {
+  display: none;
+}
+
+.reg__card {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 2rem;
+  background: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(27, 58, 45, .10);
+}
+
+.reg__kicker {
+  margin: 0 0 .5rem;
+  color: #C9A84C;
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reg__title {
+  margin: 0;
+  color: #1B3A2D;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.reg__subtitle {
+  margin: .65rem 0 1.4rem;
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.reg__field {
+  display: grid;
+  gap: .45rem;
+  margin-bottom: .9rem;
+}
+
+.reg__label {
+  color: #1B3A2D;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.reg__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 3.1rem;
+  padding: 0 .9rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 1rem;
+  background: #FFFFFF;
+  color: #6B7280;
+}
+
+.reg__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #1B3A2D;
+  font: inherit;
+}
+
+.reg__icon-btn,
+.reg__submit {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.reg__icon-btn {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: .75rem;
+  background: transparent;
+  color: #6B7280;
+}
+
+.reg__consent {
+  display: flex;
+  gap: .6rem;
+  margin: .5rem 0 1rem;
+  color: #6B7280;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.reg__submit {
+  width: 100%;
+  min-height: 3.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border-radius: 1rem;
+  background: #1B3A2D;
+  color: #FFFFFF;
+  font-weight: 800;
+}
+
+.reg__switch {
+  margin: 1.25rem 0 0;
+  color: #6B7280;
+  text-align: center;
+}
+
+.reg__switch a {
+  color: #1B3A2D;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (min-width: 1024px) {
+  .reg {
+    grid-template-columns: 1fr 480px;
+    align-items: center;
+  }
+
+  .reg__visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reg__image {
+    width: min(450px, 100%);
+  }
+}

@@ -160,14 +160,14 @@
           </div>
 
           <div class="gd-meetings-list">
-            @for (meeting of meetings; track meeting.id) {
+            @for (meeting of meetings(); track meeting.id) {
               <div class="gd-meeting-card">
                 <div class="gd-meeting-icon-wrap gd-meeting-icon--{{ meeting.status }}">
                   <lucide-icon [name]="meeting.status === 'completed' ? 'check-circle' : 'calendar'" [size]="18"></lucide-icon>
                 </div>
                 <div class="gd-meeting-info">
                   <p class="gd-meeting-title">{{ meeting.title }}</p>
-                  <p class="gd-meeting-date">{{ formatDate(meeting.date) }}</p>
+                  <p class="gd-meeting-date">{{ formatDate((meeting.meetingDate ?? meeting.date ?? "")) }}</p>
                 </div>
                 <div class="gd-meeting-right">
                   @if (meeting.hasAiSummary) {
@@ -318,3 +318,5 @@
     <p>{{ language() === 'fr' ? 'Groupe introuvable.' : 'Group not found.' }}</p>
   </div>
 }
+
+

@@ -1,0 +1,154 @@
+.lgn {
+  width: min(960px, 100%);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.lgn__visual {
+  display: none;
+}
+
+.lgn__card {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 2rem;
+  background: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(27, 58, 45, .10);
+}
+
+.lgn__kicker {
+  margin: 0 0 .5rem;
+  color: #C9A84C;
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lgn__title {
+  margin: 0;
+  color: #1B3A2D;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.lgn__subtitle {
+  margin: .65rem 0 1.5rem;
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.lgn__field {
+  display: grid;
+  gap: .45rem;
+  margin-bottom: 1rem;
+}
+
+.lgn__label {
+  color: #1B3A2D;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.lgn__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 3.25rem;
+  padding: 0 .9rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 1rem;
+  background: #FFFFFF;
+  color: #6B7280;
+}
+
+.lgn__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #1B3A2D;
+  font: inherit;
+}
+
+.lgn__icon-btn,
+.lgn__link,
+.lgn__submit,
+.lgn__secondary {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lgn__icon-btn {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: .75rem;
+  background: transparent;
+  color: #6B7280;
+}
+
+.lgn__link {
+  display: block;
+  margin: -.25rem 0 1rem auto;
+  background: transparent;
+  color: #1B3A2D;
+  font-weight: 700;
+}
+
+.lgn__submit,
+.lgn__secondary {
+  width: 100%;
+  min-height: 3.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border-radius: 1rem;
+  font-weight: 800;
+}
+
+.lgn__submit {
+  background: #1B3A2D;
+  color: #FFFFFF;
+}
+
+.lgn__secondary {
+  margin-top: .75rem;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  color: #1B3A2D;
+}
+
+.lgn__switch {
+  margin: 1.25rem 0 0;
+  color: #6B7280;
+  text-align: center;
+}
+
+.lgn__switch a {
+  color: #1B3A2D;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (min-width: 1024px) {
+  .lgn {
+    grid-template-columns: 1fr 440px;
+    align-items: center;
+  }
+
+  .lgn__visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lgn__image {
+    width: min(430px, 100%);
+  }
+}

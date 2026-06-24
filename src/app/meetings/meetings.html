@@ -1,1 +1,107 @@
-<p>meetings works!</p>
+<!-- ═══════════════════════════════════════════════════════
+     MEETINGS PAGE · Djangi Management System
+     Component: MeetingsComponent · Standalone
+═══════════════════════════════════════════════════════ -->
+<div class="mtg-page">
+
+  <!-- ── HEADER ── -->
+  <header class="mtg-header">
+    <div class="mtg-header__inner">
+      <h1 class="mtg-header__title">{{ labels().pageTitle }}</h1>
+      <button type="button" class="mtg-btn-new">
+        <lucide-icon [img]="icons.Plus" [size]="16" aria-hidden="true"></lucide-icon>
+        {{ labels().newMeeting }}
+      </button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="mtg-filters" role="tablist">
+      @for (f of filters(); track f.value) {
+        <button
+          type="button"
+          role="tab"
+          class="mtg-filter-tab"
+          [class.mtg-filter-tab--active]="activeFilter() === f.value"
+          (click)="activeFilter.set(f.value)"
+        >
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- ── MEETING LIST ── -->
+  <main class="mtg-list">
+    @if (meetings().length === 0) {
+      <!-- Empty state -->
+      <div class="mtg-empty">
+        <div class="mtg-empty__icon">
+          <lucide-icon [img]="icons.Calendar" [size]="32" aria-hidden="true"></lucide-icon>
+        </div>
+        <p class="mtg-empty__title">{{ labels().noMeetings }}</p>
+        <p class="mtg-empty__desc">{{ labels().noMeetingsDesc }}</p>
+      </div>
+    } @else {
+      @for (m of meetings(); track m.id) {
+        <button type="button" class="mtg-card" (click)="openDetail(m.id)">
+
+          <!-- Group color bar -->
+          <span class="mtg-card__bar" [style.background]="m.groupColor"></span>
+
+          <!-- Card body -->
+          <div class="mtg-card__body">
+
+            <!-- Top row: group name + status chip -->
+            <div class="mtg-card__top">
+              <span class="mtg-card__group">{{ m.groupName }}</span>
+              <span class="mtg-chip mtg-chip--{{ m.status }}">
+                {{ statusLabel(m.status) }}
+              </span>
+            </div>
+
+            <!-- Title -->
+            <p class="mtg-card__title">{{ title(m) }}</p>
+
+            <!-- Meta row -->
+            <div class="mtg-card__meta">
+              <span class="mtg-meta-item">
+                <lucide-icon [img]="icons.Calendar" [size]="13" aria-hidden="true"></lucide-icon>
+                {{ formatDate(m.date) }}
+              </span>
+              <span class="mtg-meta-item">
+                <lucide-icon [img]="icons.Clock" [size]="13" aria-hidden="true"></lucide-icon>
+                {{ formatTime(m.date) }} · {{ m.durationMin }}{{ labels().min }}
+              </span>
+              <span class="mtg-meta-item">
+                @if (m.isVirtual) {
+                  <lucide-icon [img]="icons.Video" [size]="13" aria-hidden="true"></lucide-icon>
+                } @else {
+                  <lucide-icon [img]="icons.MapPin" [size]="13" aria-hidden="true"></lucide-icon>
+                }
+                {{ location(m) }}
+              </span>
+              @if (m.status === 'completed' || m.status === 'ongoing') {
+                <span class="mtg-meta-item">
+                  <lucide-icon [img]="icons.Users" [size]="13" aria-hidden="true"></lucide-icon>
+                  {{ m.attendeeCount }}/{{ m.totalMembers }} {{ labels().attendees }}
+                </span>
+              }
+            </div>
+
+            <!-- AI summary badge -->
+            @if (m.hasAiSummary) {
+              <div class="mtg-ai-badge">
+                ✦ {{ labels().aiSummary }}
+              </div>
+            }
+          </div>
+
+          <!-- Chevron -->
+          <lucide-icon [img]="icons.ChevronRight" [size]="18" class="mtg-card__chevron" aria-hidden="true"></lucide-icon>
+
+        </button>
+      }
+    }
+  </main>
+
+</div>

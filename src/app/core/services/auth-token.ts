@@ -1,7 +1,7 @@
 export function hasStoredToken(): boolean {
   if (typeof localStorage === 'undefined') return false;
 
-  const rawToken = localStorage.getItem('token');
+  const rawToken = localStorage.getItem('auth_token');
   if (!rawToken) return false;
 
   const normalizedToken = rawToken.trim();
@@ -24,3 +24,4 @@ export function hasStoredToken(): boolean {
 
   return true;
 }
+

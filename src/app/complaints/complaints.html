@@ -1,1 +1,331 @@
-<p>complaints works!</p>
+<!-- ═══════════════════════════════════════════════════════════
+     COMPLAINTS PAGE  ·  Djangi Management System
+     ═══════════════════════════════════════════════════════════ -->
+<div class="cmp-page">
+
+  <!-- ════════════════════════════════════════════════════════
+       LIST VIEW
+       ════════════════════════════════════════════════════════ -->
+  @if (view() === 'list') {
+
+    <!-- Header -->
+    <div class="cmp-header">
+      <div class="cmp-header__left">
+        <h1 class="cmp-header__title">{{ labels().pageTitle }}</h1>
+        @if (unreadCount() > 0) {
+          <span class="cmp-header__badge">{{ unreadCount() }}</span>
+        }
+      </div>
+      <button class="cmp-btn-new" (click)="openForm()">
+        <lucide-icon name="plus" [size]="18" color="#fff"></lucide-icon>
+        <span>{{ labels().newComplaint }}</span>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="cmp-search-wrap">
+      <lucide-icon name="search" [size]="16" color="#A0A0A0" class="cmp-search-icon"></lucide-icon>
+      <input
+        class="cmp-search"
+        type="search"
+        [placeholder]="labels().searchPlaceholder"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="cmp-filter-tabs" role="tablist">
+      @for (f of statusFilters(); track f.value) {
+        <button
+          class="cmp-filter-tab"
+          [class.cmp-filter-tab--active]="statusFilter() === f.value"
+          (click)="statusFilter.set(f.value)"
+          role="tab"
+          [attr.aria-selected]="statusFilter() === f.value"
+        >{{ f.label }}</button>
+      }
+    </div>
+
+    <!-- List -->
+    @if (filteredComplaints().length === 0) {
+      <div class="cmp-empty">
+        <div class="cmp-empty__icon">
+          <lucide-icon name="inbox" [size]="40" color="#A0A0A0"></lucide-icon>
+        </div>
+        <h3 class="cmp-empty__title">{{ labels().emptyTitle }}</h3>
+        <p class="cmp-empty__desc">{{ labels().emptyDesc }}</p>
+      </div>
+    } @else {
+      <div class="cmp-list" role="list">
+        @for (c of filteredComplaints(); track c.id) {
+          <article class="cmp-card" role="listitem" (click)="openDetail(c.id)">
+            <div class="cmp-card__left">
+              <div class="cmp-card__icon cmp-card__icon--{{ c.category }}" aria-hidden="true">
+                <lucide-icon name="message-square" [size]="18"></lucide-icon>
+              </div>
+            </div>
+            <div class="cmp-card__body">
+              <div class="cmp-card__top">
+                <span class="cmp-card__ref">{{ c.ref }}</span>
+                <span class="cmp-status cmp-status--{{ c.status }}">{{ statusLabel(c.status) }}</span>
+              </div>
+              <h3 class="cmp-card__subject">{{ subjectDisplay(c) }}</h3>
+              <div class="cmp-card__meta">
+                <span class="cmp-card__group">{{ c.group }}</span>
+                <span class="cmp-card__dot" aria-hidden="true">·</span>
+                <span class="cmp-card__date">{{ formatDate(c.submittedAt) }}</span>
+              </div>
+              <div class="cmp-card__footer">
+                <span class="cmp-priority cmp-priority--{{ c.priority }}">{{ priorityLabel(c.priority) }}</span>
+                <span class="cmp-card__category">{{ categoryLabel(c.category) }}</span>
+              </div>
+            </div>
+            <div class="cmp-card__arrow" aria-hidden="true">
+              <lucide-icon name="chevron-right" [size]="16" color="#A0A0A0"></lucide-icon>
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    <div class="cmp-safe-area" aria-hidden="true"></div>
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════
+       FORM VIEW
+       ════════════════════════════════════════════════════════ -->
+  @if (view() === 'form') {
+
+    <div class="cmp-subpage-header">
+      <button class="cmp-back-btn" (click)="backToList()" aria-label="Retour">
+        <lucide-icon name="arrow-left" [size]="20" color="#1B3A2D"></lucide-icon>
+      </button>
+      <div>
+        <h1 class="cmp-subpage-title">{{ labels().formTitle }}</h1>
+        <p class="cmp-subpage-sub">{{ labels().formSubtitle }}</p>
+      </div>
+    </div>
+
+    <div class="cmp-form-card">
+
+      <!-- Category -->
+      <div class="cmp-form-group">
+        <label class="cmp-form-label">{{ labels().labelCategory }}</label>
+        <div class="cmp-category-grid">
+          @for (cat of categories(); track cat.value) {
+            <button
+              class="cmp-category-btn"
+              [class.cmp-category-btn--active]="formCategory() === cat.value"
+              (click)="formCategory.set(cat.value); formErrors.update(e => ({...e, category: ''}))"
+            >{{ cat.label }}</button>
+          }
+        </div>
+        @if (formErrors()['category']) {
+          <p class="cmp-form-error">
+            <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+            {{ formErrors()['category'] }}
+          </p>
+        }
+      </div>
+
+      <!-- Group -->
+      <div class="cmp-form-group">
+        <label class="cmp-form-label" for="cmp-group">{{ labels().labelGroup }}</label>
+        <select
+          id="cmp-group"
+          class="cmp-select"
+          [value]="formGroup()"
+          (change)="formGroup.set($any($event.target).value)"
+        >
+          <option value="">{{ labels().labelGroupPh }}</option>
+          @for (g of groups; track g) {
+            <option [value]="g">{{ g }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Subject -->
+      <div class="cmp-form-group">
+        <label class="cmp-form-label" for="cmp-subject">{{ labels().labelSubject }}</label>
+        <input
+          id="cmp-subject"
+          class="cmp-input"
+          type="text"
+          [placeholder]="labels().labelSubjectPh"
+          [value]="formSubject()"
+          (input)="formSubject.set($any($event.target).value); formErrors.update(e => ({...e, subject: ''}))"
+          [class.cmp-input--error]="formErrors()['subject']"
+          maxlength="120"
+          autocomplete="off"
+        />
+        @if (formErrors()['subject']) {
+          <p class="cmp-form-error">
+            <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+            {{ formErrors()['subject'] }}
+          </p>
+        }
+      </div>
+
+      <!-- Description -->
+      <div class="cmp-form-group">
+        <label class="cmp-form-label" for="cmp-desc">{{ labels().labelDescription }}</label>
+        <textarea
+          id="cmp-desc"
+          class="cmp-textarea"
+          rows="5"
+          [placeholder]="labels().labelDescPh"
+          [value]="formDescription()"
+          (input)="formDescription.set($any($event.target).value); formErrors.update(e => ({...e, description: ''}))"
+          [class.cmp-textarea--error]="formErrors()['description']"
+        ></textarea>
+        <div class="cmp-char-count">{{ formDescription().length }}&nbsp;/ 500</div>
+        @if (formErrors()['description']) {
+          <p class="cmp-form-error">
+            <lucide-icon name="circle-alert" [size]="13"></lucide-icon>
+            {{ formErrors()['description'] }}
+          </p>
+        }
+      </div>
+
+      <!-- Priority -->
+      <div class="cmp-form-group">
+        <label class="cmp-form-label">{{ labels().labelPriority }}</label>
+        <div class="cmp-priority-row">
+          @for (p of [['low','priorityLow'],['medium','priorityMedium'],['high','priorityHigh']]; track p[0]) {
+            <button
+              class="cmp-priority-btn cmp-priority-btn--{{ p[0] }}"
+              [class.cmp-priority-btn--active]="formPriority() === p[0]"
+              (click)="formPriority.set($any(p[0]))"
+            >{{ $any(labels())[$any(p[1])] }}</button>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer actions -->
+    <div class="cmp-form-footer">
+      <button class="cmp-btn cmp-btn--ghost" (click)="backToList()" [disabled]="isProcessing()">
+        {{ labels().cancelBtn }}
+      </button>
+      <button class="cmp-btn cmp-btn--primary" (click)="submitComplaint()" [disabled]="isProcessing()">
+        @if (isProcessing()) {
+          <span class="cmp-spinner"></span>
+          {{ labels().processing }}
+        } @else {
+          <lucide-icon name="send" [size]="16" color="#fff"></lucide-icon>
+          {{ labels().submitBtn }}
+        }
+      </button>
+    </div>
+
+    <div class="cmp-safe-area" aria-hidden="true"></div>
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════
+       SUCCESS VIEW
+       ════════════════════════════════════════════════════════ -->
+  @if (view() === 'success') {
+    <div class="cmp-success-wrap">
+      <div class="cmp-success-icon">
+        <lucide-icon name="check-circle" [size]="52" color="#4A7C59"></lucide-icon>
+      </div>
+      <h2 class="cmp-success-title">{{ labels().successTitle }}</h2>
+      <p class="cmp-success-desc">{{ labels().successDesc }}</p>
+      <div class="cmp-success-ref">
+        <span class="cmp-success-ref__label">{{ labels().successRef }}</span>
+        <span class="cmp-success-ref__value">{{ lastRef() }}</span>
+      </div>
+      <button class="cmp-btn cmp-btn--primary" style="margin-top:2rem" (click)="backToList()">
+        {{ labels().closeBtn }}
+      </button>
+    </div>
+  }
+
+
+  <!-- ════════════════════════════════════════════════════════
+       DETAIL VIEW
+       ════════════════════════════════════════════════════════ -->
+  @if (view() === 'detail' && selectedComplaint()) {
+    @let c = selectedComplaint()!;
+
+    <div class="cmp-subpage-header">
+      <button class="cmp-back-btn" (click)="backToList()" aria-label="Retour">
+        <lucide-icon name="arrow-left" [size]="20" color="#1B3A2D"></lucide-icon>
+      </button>
+      <div>
+        <h1 class="cmp-subpage-title">{{ c.ref }}</h1>
+        <p class="cmp-subpage-sub">{{ formatDate(c.submittedAt) }}</p>
+      </div>
+      <span class="cmp-status cmp-status--{{ c.status }}" style="margin-left:auto">{{ statusLabel(c.status) }}</span>
+    </div>
+
+    <!-- Subject card -->
+    <div class="cmp-detail-card">
+      <div class="cmp-detail-icon cmp-card__icon--{{ c.category }}" aria-hidden="true">
+        <lucide-icon name="message-square" [size]="22"></lucide-icon>
+      </div>
+      <h2 class="cmp-detail-subject">{{ subjectDisplay(c) }}</h2>
+      <p class="cmp-detail-desc">{{ language() === 'fr' ? c.descFr : c.description }}</p>
+    </div>
+
+    <!-- Meta grid -->
+    <div class="cmp-meta-grid">
+      <div class="cmp-meta-item">
+        <span class="cmp-meta-label">{{ labels().detailCategory }}</span>
+        <span class="cmp-meta-value">{{ categoryLabel(c.category) }}</span>
+      </div>
+      <div class="cmp-meta-item">
+        <span class="cmp-meta-label">{{ labels().detailGroup }}</span>
+        <span class="cmp-meta-value">{{ c.group }}</span>
+      </div>
+      <div class="cmp-meta-item">
+        <span class="cmp-meta-label">{{ labels().detailPriority }}</span>
+        <span class="cmp-priority cmp-priority--{{ c.priority }}">{{ priorityLabel(c.priority) }}</span>
+      </div>
+      <div class="cmp-meta-item">
+        <span class="cmp-meta-label">{{ labels().detailUpdated }}</span>
+        <span class="cmp-meta-value">{{ formatDate(c.updatedAt) }}</span>
+      </div>
+    </div>
+
+    <!-- Team response -->
+    <div class="cmp-section">
+      <h3 class="cmp-section-title">{{ labels().detailResponse }}</h3>
+      @if (responseDisplay(c)) {
+        <div class="cmp-response-card">
+          <lucide-icon name="message-square" [size]="16" color="#4A7C59"></lucide-icon>
+          <p class="cmp-response-text">{{ responseDisplay(c) }}</p>
+        </div>
+      } @else {
+        <div class="cmp-response-empty">
+          <lucide-icon name="clock" [size]="16" color="#A0A0A0"></lucide-icon>
+          <span>{{ labels().noResponse }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Timeline -->
+    <div class="cmp-section">
+      <h3 class="cmp-section-title">{{ labels().detailTimeline }}</h3>
+      <div class="cmp-timeline">
+        @for (event of c.timeline; track event.date; let last = $last) {
+          <div class="cmp-timeline-item">
+            <div class="cmp-timeline-dot" [class.cmp-timeline-dot--last]="last"></div>
+            @if (!last) { <div class="cmp-timeline-line"></div> }
+            <div class="cmp-timeline-content">
+              <span class="cmp-timeline-label">{{ timelineLabel(event) }}</span>
+              <span class="cmp-timeline-date">{{ formatDate(event.date) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="cmp-safe-area" aria-hidden="true"></div>
+  }
+
+</div>

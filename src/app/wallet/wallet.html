@@ -101,7 +101,7 @@
         </div>
         <div class="wlt-tx-card">
           @for (tx of transactions().slice(0, 5); track tx.id; let last = $last) {
-            <div class="wlt-tx-row">
+            <button type="button" class="wlt-tx-row" (click)="openReceipt(tx)">
               <span class="wlt-tx-row__icon"
                 [class.wlt-tx-row__icon--credit]="tx.amount > 0"
                 [class.wlt-tx-row__icon--debit]="tx.amount < 0"
@@ -118,7 +118,7 @@
                 [class.wlt-tx-row__amount--debit]="tx.amount < 0">
                 {{ tx.amount > 0 ? '+' : '-' }}{{ formatAmount(tx.amount) }}
               </span>
-            </div>
+            </button>
             @if (!last) { <div class="wlt-tx-divider" aria-hidden="true"></div> }
           }
         </div>
@@ -183,11 +183,59 @@
         </div>
       </div>
 
-      <div class="wlt-modal__footer wlt-modal__footer--center">
-        <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
-        <button class="wlt-btn wlt-btn--primary" (click)="submitPin()" [disabled]="pinInput().length < 4">
+      <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:80px;"><button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button><button class="wlt-btn wlt-btn--primary" (click)="submitPin()" [disabled]="pinInput().length < 4">
           {{ labels().pinConfirm }}
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (activeModal() === 'receipt') {
+  <div class="wlt-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="labels().downloadReceipt">
+    <div class="wlt-modal wlt-modal--receipt">
+      <div class="wlt-modal__header">
+        <button class="wlt-modal__close" (click)="closeModal()" aria-label="Fermer">
+          <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+        </button>
+        <div class="wlt-modal__header-icon wlt-modal__header-icon--green">
+          <lucide-icon name="download" [size]="24" color="#FFFFFF"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="wlt-modal__title">{{ labels().downloadReceipt }}</h2>
+          <p class="wlt-modal__subtitle">{{ language() === 'fr' ? 'Cliquez pour télécharger le reçu de cette transaction.' : 'Tap to download the receipt for this transaction.' }}</p>
+        </div>
+      </div>
+      <div class="wlt-modal__body wlt-modal__body--receipt">
+        <div class="wlt-receipt-preview">
+          <img src="/assets/images/logo.png" alt="Djangi logo" class="wlt-receipt-logo" />
+          <div class="wlt-receipt-row">
+            <span>{{ labels().historyTitle }}</span>
+            <strong>{{ lastReceiptData()?.label }}</strong>
+          </div>
+          <div class="wlt-receipt-row">
+            <span>{{ language() === 'fr' ? 'Montant' : 'Amount' }}</span>
+            <strong>{{ lastReceiptData()?.amount?.toLocaleString('fr-FR') }} FCFA</strong>
+          </div>
+          <div class="wlt-receipt-row">
+            <span>{{ language() === 'fr' ? 'Date' : 'Date' }}</span>
+            <strong>{{ lastReceiptData()?.date }}</strong>
+          </div>
+          @if (lastReceiptData()?.groupName) {
+            <div class="wlt-receipt-row">
+              <span>{{ language() === 'fr' ? 'Groupe' : 'Group' }}</span>
+              <strong>{{ lastReceiptData()?.groupName }}</strong>
+            </div>
+          }
+          <div class="wlt-receipt-row">
+            <span>{{ language() === 'fr' ? 'Référence' : 'Reference' }}</span>
+            <strong>{{ lastReceiptData()?.ref }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="wlt-modal__footer wlt-modal__footer--center">
+        <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
+        <button class="wlt-btn wlt-btn--primary" (click)="downloadReceipt()">{{ labels().downloadReceipt }}</button>
       </div>
     </div>
   </div>

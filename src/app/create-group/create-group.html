@@ -1,56 +1,31 @@
-<div class="cg-wrap">
+﻿<div class="cg-wrap" style="padding-bottom: 140px;">
 
-  <!-- ── HEADER ── -->
   <header class="cg-header">
     <button type="button" (click)="goBack()" class="cg-back-btn">
       <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
     </button>
-    <h1 class="cg-title">{{ language() === 'fr' ? 'Créer un groupe' : 'Create group' }}</h1>
+    <h1 class="cg-title">{{ language() === 'fr' ? 'Creer un groupe' : 'Create group' }}</h1>
     <div></div>
   </header>
 
-  <!-- ── FORM ── -->
   <form (ngSubmit)="onSubmit()" class="cg-form">
 
-    <!-- Community -->
-    <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Communauté' : 'Community' }}</label>
-      <input
-        type="text"
-        [value]="communityId()"
-        class="cg-input"
-        readonly
-      />
-    </div>
-
-  <!-- Group name -->
     <div class="cg-field">
       <label class="cg-label">{{ language() === 'fr' ? 'Nom du groupe' : 'Group name' }}</label>
-      <input
-        type="text"
-        [(ngModel)]="groupName"
-        name="groupName"
-        [placeholder]="language() === 'fr' ? 'ex. Épargne du quartier' : 'ex. Neighborhood savings'"
-        class="cg-input"
-        required
-      />
+      <input type="text" [(ngModel)]="groupName" name="groupName"
+        [placeholder]="language() === 'fr' ? 'ex. Epargne du quartier' : 'ex. Neighborhood savings'"
+        class="cg-input" required />
     </div>
 
-    <!-- Description -->
     <div class="cg-field">
       <label class="cg-label">{{ language() === 'fr' ? 'Description' : 'Description' }}</label>
-      <textarea
-        [(ngModel)]="description"
-        name="description"
-        [placeholder]="language() === 'fr' ? 'Décrivez votre groupe...' : 'Describe your group...'"
-        class="cg-input cg-textarea"
-        required
-      ></textarea>
+      <textarea [(ngModel)]="description" name="description"
+        [placeholder]="language() === 'fr' ? 'Decrivez votre groupe...' : 'Describe your group...'"
+        class="cg-input cg-textarea"></textarea>
     </div>
 
-    <!-- Frequency -->
     <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Fréquence' : 'Frequency' }}</label>
+      <label class="cg-label">{{ language() === 'fr' ? 'Frequence' : 'Frequency' }}</label>
       <div class="cg-select-wrap">
         <select [(ngModel)]="frequency" name="frequency" class="cg-select">
           @for (freq of frequencies; track freq) {
@@ -61,18 +36,12 @@
       </div>
     </div>
 
-    <!-- Contribution amount -->
     <div class="cg-field">
       <label class="cg-label">{{ language() === 'fr' ? 'Montant de contribution' : 'Contribution amount' }}</label>
       <div class="cg-input-group">
-        <input
-          type="number"
-          [(ngModel)]="contributionAmount"
-          name="contributionAmount"
+        <input type="number" [(ngModel)]="contributionAmount" name="contributionAmount"
           [placeholder]="language() === 'fr' ? 'Montant' : 'Amount'"
-          class="cg-input cg-input-number"
-          required
-        />
+          class="cg-input cg-input-number" required />
         <div class="cg-select-wrap cg-currency-select">
           <select [(ngModel)]="currency" name="currency" class="cg-select">
             @for (curr of currencies; track curr) {
@@ -84,27 +53,15 @@
       </div>
     </div>
 
-    <!-- Max members -->
-    <div class="cg-field">
-      <label class="cg-label">{{ language() === 'fr' ? 'Nombre maximum de membres' : 'Max members' }}</label>
-      <input
-        type="number"
-        [(ngModel)]="maxMembers"
-        name="maxMembers"
-        [placeholder]="language() === 'fr' ? 'ex. 10' : 'ex. 10'"
-        class="cg-input"
-        min="2"
-        max="100"
-        required
-      />
-    </div>
+    @if (error()) {
+      <p style="color:#DC2626;font-size:14px;font-weight:600;">{{ error() }}</p>
+    }
 
   </form>
 
-  <!-- ── SUBMIT BUTTON (fixed) ── -->
-  <div class="cg-footer">
-    <button type="submit" (click)="onSubmit()" class="cg-submit-btn">
-      {{ language() === 'fr' ? 'Créer le groupe' : 'Create group' }}
+  <div class="cg-footer" style="position:fixed;bottom:70px;left:0;right:0;padding:16px 20px;background:#FAFAF8;border-top:1px solid #E5E7EB;z-index:50;">
+    <button type="button" (click)="onSubmit()" [disabled]="loading()" class="cg-submit-btn" style="width:100%;">
+      {{ loading() ? 'Creating...' : (language() === 'fr' ? 'Creer le groupe' : 'Create group') }}
     </button>
   </div>
 

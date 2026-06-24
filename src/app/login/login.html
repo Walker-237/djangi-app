@@ -1,0 +1,57 @@
+<section class="lgn">
+  <div class="lgn__visual" aria-hidden="true">
+    <img class="lgn__image" src="/assets/image/Mobile login-cuate.svg" alt="" />
+  </div>
+
+  <form class="lgn__card" novalidate (submit)="login()">
+    <p class="lgn__kicker">{{ labels().kicker }}</p>
+    <h1 class="lgn__title">{{ labels().title }}</h1>
+    <p class="lgn__subtitle">{{ labels().subtitle }}</p>
+
+    <label class="lgn__field">
+      <span class="lgn__label">{{ labels().email }}</span>
+      <span class="lgn__input-wrap">
+        <lucide-icon name="mail" [size]="18" aria-hidden="true"></lucide-icon>
+        <input class="lgn__input" type="email" autocomplete="email" [placeholder]="labels().emailPlaceholder" />
+      </span>
+    </label>
+
+    <label class="lgn__field">
+      <span class="lgn__label">{{ labels().password }}</span>
+      <span class="lgn__input-wrap">
+        <lucide-icon name="lock-keyhole" [size]="18" aria-hidden="true"></lucide-icon>
+        <input
+          class="lgn__input"
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="current-password"
+          [placeholder]="labels().passwordPlaceholder"
+        />
+        <button
+          class="lgn__icon-btn"
+          type="button"
+          (click)="showPassword.update(value => !value)"
+          [attr.aria-label]="labels().showPassword"
+        >
+          <lucide-icon name="eye" [size]="18" aria-hidden="true"></lucide-icon>
+        </button>
+      </span>
+    </label>
+
+    <button class="lgn__link" type="button">{{ labels().forgot }}</button>
+
+    <button class="lgn__submit" type="submit">
+      {{ labels().submit }}
+      <lucide-icon name="arrow-right" [size]="18" aria-hidden="true"></lucide-icon>
+    </button>
+
+    <button class="lgn__secondary" type="button">
+      <lucide-icon name="phone" [size]="18" aria-hidden="true"></lucide-icon>
+      {{ labels().phone }}
+    </button>
+
+    <p class="lgn__switch">
+      {{ labels().switchText }}
+      <a routerLink="/auth/register">{{ labels().switchLink }}</a>
+    </p>
+  </form>
+</section>

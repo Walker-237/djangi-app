@@ -1,5 +1,10 @@
-import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { WalletService } from '../core/services/wallet.service';
+import { TokenService } from '../core/services/token.service';
+import { AuthService } from '../core/services/auth.service';
+import { Wallet as ApiWallet, WalletTransaction } from '../core/models/models';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -197,34 +202,18 @@ export interface Transaction {
   groupName: string;
 }
 
-export type ModalType = 'deposit' | 'withdraw' | 'transfer' | 'history' | 'pin' | null;
+export type ModalType = 'deposit' | 'withdraw' | 'transfer' | 'history' | 'pin' | 'receipt' | null;
 export type ModalStep = 'form' | 'confirm' | 'success';
 export type HistoryFilter = 'all' | 'credit' | 'debit' | 'group';
 
-const MOCK_BALANCE       = 1_250_000;
-const MOCK_MONTHLY_DELTA =    45_000;
-const MOCK_ACTIVE_GROUPS = 3;
-const BALANCE_PIN        = '1234';
+const INITIAL_BALANCE = 0;
+const INITIAL_MONTHLY_DELTA = 0;
+const INITIAL_ACTIVE_GROUPS = 0;
 
-const MOCK_GROUPS: GroupContribution[] = [
-  { id:'g1', name:'Tontine Famille',  nextAmount:25_000,  dueDate:'2025-07-05', rotationIndex:4, rotationTotal:8,  status:'paid',    avatarColor:'#1B3A2D' },
-  { id:'g2', name:'Cercle Amis BTP', nextAmount:50_000,  dueDate:'2025-07-10', rotationIndex:1, rotationTotal:6,  status:'pending', avatarColor:'#4A7C59' },
-  { id:'g3', name:'Njangi Pro',       nextAmount:100_000, dueDate:'2025-06-28', rotationIndex:3, rotationTotal:5,  status:'late',    avatarColor:'#C0392B' },
-  { id:'g4', name:'Épargne Quartier', nextAmount:15_000,  dueDate:'2025-07-15', rotationIndex:2, rotationTotal:10, status:'pending', avatarColor:'#2980B9' },
-];
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id:'t1', label:'Contribution received', labelFr:'Contribution reçue',   date:'2025-06-20', amount:+125_000, groupName:'Tontine Famille'  },
-  { id:'t2', label:'Monthly payment',       labelFr:'Versement mensuel',     date:'2025-06-18', amount: -50_000, groupName:'Cercle Amis BTP'  },
-  { id:'t3', label:'Withdrawal',            labelFr:'Retrait',               date:'2025-06-15', amount:-200_000, groupName:''                 },
-  { id:'t4', label:'Deposit',               labelFr:'Dépôt',                 date:'2025-06-12', amount:+300_000, groupName:''                 },
-  { id:'t5', label:'Late fee recovered',    labelFr:'Pénalité récupérée',    date:'2025-06-10', amount:  +5_000, groupName:'Njangi Pro'        },
-  { id:'t6', label:'Group contribution',    labelFr:'Cotisation groupe',     date:'2025-06-08', amount: -25_000, groupName:'Épargne Quartier'  },
-  { id:'t7', label:'Payout received',       labelFr:'Tour de tontine reçu',  date:'2025-06-05', amount:+500_000, groupName:'Njangi Pro'        },
-  { id:'t8', label:'Monthly payment',       labelFr:'Versement mensuel',     date:'2025-06-01', amount:-100_000, groupName:'Njangi Pro'        },
-  { id:'t9', label:'Deposit',               labelFr:'Dépôt',                 date:'2025-05-28', amount:+150_000, groupName:''                 },
-  { id:'t10',label:'Withdrawal',            labelFr:'Retrait',               date:'2025-05-20', amount: -75_000, groupName:''                 },
-];
+const INITIAL_GROUPS: GroupContribution[] = [];
+
+const INITIAL_TRANSACTIONS: Transaction[] = [];
 
 const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000, 100_000, 250_000];
 
@@ -240,16 +229,22 @@ const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000, 100_000, 250_000];
   styleUrls: ['./wallet.css'],
 })
 export class WalletComponent {
+  private readonly walletService = inject(WalletService);
+  private readonly tokenService = inject(TokenService);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   language = signal<Lang>('fr');
 
   // Balance hidden by default — user must enter PIN to reveal
   balanceVisible = signal(false);
-  balance        = signal(MOCK_BALANCE);
-  monthlyDelta   = signal(MOCK_MONTHLY_DELTA);
-  activeGroups   = signal(MOCK_ACTIVE_GROUPS);
-  groups         = signal<GroupContribution[]>(MOCK_GROUPS);
-  transactions   = signal<Transaction[]>(MOCK_TRANSACTIONS);
+  balance        = signal(INITIAL_BALANCE);
+  monthlyDelta   = signal(INITIAL_MONTHLY_DELTA);
+  activeGroups   = signal(INITIAL_ACTIVE_GROUPS);
+  groups         = signal<GroupContribution[]>(INITIAL_GROUPS);
+  transactions   = signal<Transaction[]>(INITIAL_TRANSACTIONS);
+  loading        = signal(false);
+  error          = signal<string | null>(null);
 
   activeModal  = signal<ModalType>(null);
   modalStep    = signal<ModalStep>('form');
@@ -281,7 +276,8 @@ export class WalletComponent {
 
   // Receipt data (filled on success)
   lastReceiptData = signal<{
-    type: 'deposit' | 'withdraw' | 'transfer';
+    type: 'deposit' | 'withdraw' | 'transfer' | 'receipt';
+    label: string;
     amount: number;
     method: string;
     recipient?: string;
@@ -289,8 +285,33 @@ export class WalletComponent {
     date: string;
     ref: string;
     balanceAfter: number;
+    groupName?: string;
   } | null>(null);
 
+
+  ngOnInit(): void {
+    if (this.tokenService.getPinToken()) {
+      this.loadWallet();
+    } else {
+      this.openModal('pin');
+    }
+  }
+
+  loadWallet(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.walletService.getWallet().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (wallet) => this.applyWallet(wallet),
+      error: () => {
+        this.error.set(this.language() === 'fr' ? 'Impossible de charger le portefeuille.' : 'Unable to load wallet.');
+        this.loading.set(false);
+      },
+    });
+    this.walletService.getHistory(0, 50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (history) => this.transactions.set(history.map((tx) => this.toTransaction(tx))),
+      error: () => this.error.set(this.language() === 'fr' ? 'Impossible de charger l historique.' : 'Unable to load history.'),
+    });
+  }
   labels = computed(() => LABELS[this.language()] ?? LABELS['fr']);
 
   formattedBalance = computed(() =>
@@ -388,15 +409,23 @@ export class WalletComponent {
   }
 
   submitPin(): void {
-    if (this.pinInput() === BALANCE_PIN) {
-      this.balanceVisible.set(true);
-      this.pinInput.set('');
-      this.pinError.set('');
-      this.closeModal();
-    } else {
-      this.pinError.set(this.labels().pinError);
-      this.pinInput.set('');
-    }
+    if (this.pinInput().length !== 4) return;
+    this.isProcessing.set(true);
+    this.authService.verifyPin(this.pinInput()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.balanceVisible.set(true);
+        this.pinInput.set('');
+        this.pinError.set('');
+        this.isProcessing.set(false);
+        this.closeModal();
+        this.loadWallet();
+      },
+      error: () => {
+        this.pinError.set(this.labels().pinError);
+        this.pinInput.set('');
+        this.isProcessing.set(false);
+      },
+    });
   }
 
   onPinInput(event: Event): void {
@@ -441,6 +470,29 @@ export class WalletComponent {
     if (action === 'deposit' || action === 'withdraw' || action === 'transfer' || action === 'history') {
       this.openModal(action);
     }
+  }
+
+  openReceipt(tx: Transaction): void {
+    const label = this.language() === 'fr' ? tx.labelFr : tx.label;
+    const amount = Math.abs(tx.amount);
+    const ref = 'RCT-' + tx.id.toUpperCase();
+    const method = tx.groupName || (tx.amount >= 0 ? this.labels().deposit : this.labels().withdraw);
+
+    this.lastReceiptData.set({
+      type: 'receipt',
+      label,
+      amount,
+      method,
+      recipient: tx.groupName || undefined,
+      note: '',
+      date: this.txDate(tx.date),
+      ref,
+      balanceAfter: this.balance(),
+      groupName: tx.groupName || undefined,
+    });
+
+    this.activeModal.set('receipt');
+    document.body.style.overflow = 'hidden';
   }
 
   openModal(type: ModalType): void {
@@ -517,28 +569,27 @@ export class WalletComponent {
 
   confirmDeposit(): void {
     this.isProcessing.set(true);
-    setTimeout(() => {
-      const amount = this.parsedDepositAmount();
-      const method = this.depositMethods().find(m => m.value === this.depositMethod())?.label ?? '';
-      this.balance.update(b => b + amount);
-      this.monthlyDelta.update(d => d + amount);
-      const ref = 'DEP-' + Date.now().toString(36).toUpperCase();
-      this.transactions.update(txs => [{
-        id: 't' + Date.now(), label: 'Deposit', labelFr: 'Dépôt',
-        date: new Date().toISOString().slice(0, 10), amount: +amount, groupName: '',
-      }, ...txs]);
-      this.lastReceiptData.set({
-        type: 'deposit', amount, method,
-        note: this.depositNote(),
-        date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'),
-        ref, balanceAfter: this.balance(),
+    const amount = this.parsedDepositAmount();
+    const method = this.apiMethod(this.depositMethod());
+    this.walletService.deposit(amount, method, this.depositNote() || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (wallet) => {
+          this.applyWallet(wallet);
+          const ref = 'DEP-' + Date.now().toString(36).toUpperCase();
+          this.transactions.update(txs => [{ id: ref, label: 'Deposit', labelFr: 'Depot', date: new Date().toISOString().slice(0, 10), amount: +amount, groupName: '' }, ...txs]);
+          this.lastReceiptData.set({ type: 'deposit', label: this.language() === 'fr' ? 'Depot' : 'Deposit', amount, method: this.selectedDepositMethodLabel, note: this.depositNote(), date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'), ref, balanceAfter: this.balance() });
+          this.isProcessing.set(false);
+          this.modalStep.set('success');
+        },
+        error: () => {
+          this.formError.set(this.language() === 'fr' ? 'Echec du depot.' : 'Deposit failed.');
+          this.isProcessing.set(false);
+        },
       });
-      this.isProcessing.set(false);
-      this.modalStep.set('success');
-    }, 1800);
   }
 
-  // ── Withdraw flow ─────────────────────────────────────────────────────────
+  // ---��─ Withdraw flow ─────────────────────────────────────────────────────────
   submitWithdraw(): void {
     const amount = this.parsedWithdrawAmount();
     if (!amount || amount < 500) { this.formError.set(this.labels().amountError); return; }
@@ -549,28 +600,27 @@ export class WalletComponent {
 
   confirmWithdraw(): void {
     this.isProcessing.set(true);
-    setTimeout(() => {
-      const amount = this.parsedWithdrawAmount();
-      const dest = this.withdrawDests().find(d => d.value === this.withdrawDest())?.label ?? '';
-      this.balance.update(b => b - amount);
-      const ref = 'WDR-' + Date.now().toString(36).toUpperCase();
-      this.transactions.update(txs => [{
-        id: 't' + Date.now(), label: 'Withdrawal', labelFr: 'Retrait',
-        date: new Date().toISOString().slice(0, 10), amount: -amount, groupName: '',
-      }, ...txs]);
-      this.lastReceiptData.set({
-        type: 'withdraw', amount, method: dest,
-        recipient: '+237 ' + this.withdrawPhone(),
-        note: this.withdrawNote(),
-        date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'),
-        ref, balanceAfter: this.balance(),
+    const amount = this.parsedWithdrawAmount();
+    const method = this.apiMethod(this.withdrawDest());
+    this.walletService.withdraw(amount, method, this.withdrawNote() || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (wallet) => {
+          this.applyWallet(wallet);
+          const ref = 'WDR-' + Date.now().toString(36).toUpperCase();
+          this.transactions.update(txs => [{ id: ref, label: 'Withdrawal', labelFr: 'Retrait', date: new Date().toISOString().slice(0, 10), amount: -amount, groupName: '' }, ...txs]);
+          this.lastReceiptData.set({ type: 'withdraw', label: this.language() === 'fr' ? 'Retrait' : 'Withdrawal', amount, method: this.selectedWithdrawDestLabel, recipient: '+237 ' + this.withdrawPhone(), note: this.withdrawNote(), date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'), ref, balanceAfter: this.balance() });
+          this.isProcessing.set(false);
+          this.modalStep.set('success');
+        },
+        error: () => {
+          this.formError.set(this.language() === 'fr' ? 'Echec du retrait.' : 'Withdrawal failed.');
+          this.isProcessing.set(false);
+        },
       });
-      this.isProcessing.set(false);
-      this.modalStep.set('success');
-    }, 1800);
   }
 
-  // ── Transfer flow ─────────────────────────────────────────────────────────
+  // ---��─ Transfer flow ─────────────────────────────────────────────────────────
   submitTransfer(): void {
     const amount = this.parsedTransferAmount();
     if (!amount || amount < 500) { this.formError.set(this.labels().amountError); return; }
@@ -585,33 +635,39 @@ export class WalletComponent {
 
   confirmTransfer(): void {
     this.isProcessing.set(true);
-    setTimeout(() => {
-      const amount = this.parsedTransferAmount();
-      const dest = this.transferDests().find(d => d.value === this.transferDest())?.label ?? '';
-      this.balance.update(b => b - amount);
-      const ref = 'TRF-' + Date.now().toString(36).toUpperCase();
-      this.transactions.update(txs => [{
-        id: 't' + Date.now(), label: 'Transfer', labelFr: 'Transfert',
-        date: new Date().toISOString().slice(0, 10), amount: -amount, groupName: '',
-      }, ...txs]);
-      this.lastReceiptData.set({
-        type: 'transfer', amount, method: dest,
-        recipient: '+237 ' + this.transferRecipient(),
-        note: this.transferNote(),
-        date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'),
-        ref, balanceAfter: this.balance(),
+    const amount = this.parsedTransferAmount();
+    this.walletService.transfer(this.transferRecipient(), amount, this.transferNote() || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (wallet) => {
+          this.applyWallet(wallet);
+          const ref = 'TRF-' + Date.now().toString(36).toUpperCase();
+          this.transactions.update(txs => [{ id: ref, label: 'Transfer', labelFr: 'Transfert', date: new Date().toISOString().slice(0, 10), amount: -amount, groupName: '' }, ...txs]);
+          this.lastReceiptData.set({ type: 'transfer', label: this.language() === 'fr' ? 'Transfert' : 'Transfer', amount, method: this.selectedTransferDestLabel, recipient: '+237 ' + this.transferRecipient(), note: this.transferNote(), date: new Date().toLocaleString(this.language() === 'fr' ? 'fr-FR' : 'en-GB'), ref, balanceAfter: this.balance() });
+          this.isProcessing.set(false);
+          this.modalStep.set('success');
+        },
+        error: () => {
+          this.formError.set(this.language() === 'fr' ? 'Echec du transfert.' : 'Transfer failed.');
+          this.isProcessing.set(false);
+        },
       });
-      this.isProcessing.set(false);
-      this.modalStep.set('success');
-    }, 1800);
   }
 
-  // ── Receipt download ──────────────────────────────────────────────────────
+  // ---��─ Receipt download ──────────────────────────────────────────────────────
   downloadReceipt(): void {
     const r = this.lastReceiptData();
     if (!r) return;
     const l = this.labels();
-    const typeLabel = r.type === 'deposit' ? l.deposit : r.type === 'withdraw' ? l.withdraw : l.transfer;
+    const typeLabel = r.type === 'deposit'
+      ? l.deposit
+      : r.type === 'withdraw'
+        ? l.withdraw
+        : r.type === 'transfer'
+          ? l.transfer
+          : this.language() === 'fr'
+            ? 'Transaction'
+            : 'Transaction';
     const sign = r.type === 'deposit' ? '+' : '-';
 
     const html = `
@@ -646,6 +702,7 @@ export class WalletComponent {
 <body>
   <div class="receipt">
     <div class="logo">
+      <img src="/assets/images/logo.png" alt="Djangi logo" class="logo-img" />
       <h1>Djangi</h1>
       <p>${this.language() === 'fr' ? 'Reçu de transaction' : 'Transaction Receipt'}</p>
     </div>
@@ -656,7 +713,8 @@ export class WalletComponent {
     <div class="rows">
       <div class="row"><span class="k">${this.language() === 'fr' ? 'Date' : 'Date'}</span><span class="v">${r.date}</span></div>
       <div class="row"><span class="k">${this.language() === 'fr' ? 'Méthode' : 'Method'}</span><span class="v">${r.method}</span></div>
-      ${r.recipient ? `<div class="row"><span class="k">${r.type === 'transfer' ? l.transferTo : l.withdrawPhone}</span><span class="v">${r.recipient}</span></div>` : ''}
+      ${r.groupName ? `<div class="row"><span class="k">${this.language() === 'fr' ? 'Groupe' : 'Group'}</span><span class="v">${r.groupName}</span></div>` : ''}
+      ${r.recipient ? `<div class="row"><span class="k">${this.language() === 'fr' ? 'Destinataire' : 'Recipient'}</span><span class="v">${r.recipient}</span></div>` : ''}
       ${r.note ? `<div class="row"><span class="k">${this.language() === 'fr' ? 'Note' : 'Note'}</span><span class="v">${r.note}</span></div>` : ''}
       <div class="row"><span class="k">${this.language() === 'fr' ? 'Solde après' : 'Balance after'}</span><span class="v" style="color:#1B3A2D">${r.balanceAfter.toLocaleString('fr-FR')} FCFA</span></div>
     </div>
@@ -684,6 +742,26 @@ export class WalletComponent {
   }
 
   // ── Label lookups ─────────────────────────────────────────────────────────
+
+  private applyWallet(wallet: ApiWallet): void {
+    this.balance.set(wallet.balance);
+    this.loading.set(false);
+  }
+
+  private apiMethod(value: string): 'mobile_money' | 'bank' {
+    return value === 'bank' ? 'bank' : 'mobile_money';
+  }
+
+  private toTransaction(tx: WalletTransaction): Transaction {
+    return {
+      id: tx.id,
+      label: tx.label,
+      labelFr: tx.label,
+      date: tx.createdAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+      amount: tx.type === 'withdrawal' || tx.type === 'transfer_out' || tx.type === 'contribution_paid' || tx.type === 'admin_debit' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
+      groupName: tx.groupName ?? '',
+    };
+  }
   get selectedDepositMethodLabel(): string {
     return this.depositMethods().find(m => m.value === this.depositMethod())?.label ?? '';
   }
@@ -696,5 +774,5 @@ export class WalletComponent {
     return this.transferDests().find(d => d.value === this.transferDest())?.label ?? '';
   }
 }
-
 export { WalletComponent as Wallet };
+

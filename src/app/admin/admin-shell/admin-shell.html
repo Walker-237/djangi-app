@@ -1,0 +1,28 @@
+<div class="ads">
+  <aside class="ads__sidebar">
+    <a class="ads__brand" routerLink="/admin/dashboard" aria-label="Djangi admin">
+      <img class="ads__logo" src="/assets/image/logo.png" alt="Djangi" />
+      <span>
+        <strong class="ads__brand-title">{{ labels().title }}</strong>
+        <span class="ads__brand-subtitle">{{ labels().role }}</span>
+      </span>
+    </a>
+
+    <nav class="ads__nav" aria-label="Admin navigation">
+      @for (item of navItems; track item.path) {
+        <a
+          class="ads__link"
+          [routerLink]="item.path"
+          routerLinkActive="ads__link--active"
+        >
+          <lucide-icon [name]="item.icon" [size]="18" aria-hidden="true"></lucide-icon>
+          {{ navLabel(item.key) }}
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <main class="ads__content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

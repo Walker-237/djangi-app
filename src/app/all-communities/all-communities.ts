@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import {
   LUCIDE_ICONS,
+  LucideAngularModule,
   LucideIconProvider,
   ArrowLeft,
   Users,
@@ -16,11 +17,12 @@ import { Community } from '../core/models/models';
 @Component({
   selector: 'app-all-communities',
   standalone: true,
-  imports: [],
+  imports: [LucideAngularModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [
     {
       provide: LUCIDE_ICONS,
+      multi: true,
       useValue: new LucideIconProvider({
         ArrowLeft,
         Users,
@@ -49,13 +51,13 @@ export class AllCommunities {
     return this.communities().filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        c.nameFr.toLowerCase().includes(q) ||
+        (c.nameFr ?? "").toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q),
     );
   });
 
   communityName(c: Community): string {
-    return this.language() === 'fr' ? c.nameFr : c.name;
+    return this.language() === 'fr' ? (c.nameFr ?? c.name) : c.name;
   }
 
   openCommunity(c: Community): void {
@@ -70,3 +72,5 @@ export class AllCommunities {
     this.location.back();
   }
 }
+
+

@@ -14,7 +14,9 @@ import {
   Users,
   CircleDollarSign,
   Wallet,
+  Calendar,
   Bell,
+  MessageSquare,
   LogIn,
   UserPlus,
   LogOut,
@@ -53,7 +55,9 @@ export class NavBar {
     Users,
     CircleDollarSign,
     Wallet,
+    Calendar,
     Bell,
+    MessageSquare,
     LogIn,
     UserPlus,
     LogOut,
@@ -66,6 +70,9 @@ export class NavBar {
     { path: '/app/communities', icon: Users,              labelEn: 'Communities', labelFr: 'Communautés' },
     { path: '/app/my-groups',   icon: CircleDollarSign,  labelEn: 'My Groups',   labelFr: 'Mes groupes' },
     { path: '/app/wallet',      icon: Wallet,             labelEn: 'Wallet',      labelFr: 'Portefeuille' },
+    { path: '/app/meetings',    icon: Calendar,           labelEn: 'Meetings',    labelFr: 'Reunions' },
+    { path: '/app/notifications', icon: Bell,              labelEn: 'Alerts',      labelFr: 'Alertes' },
+    { path: '/app/complaints',  icon: MessageSquare,      labelEn: 'Complaints',  labelFr: 'Reclamations' },
   ];
 
   label(link: (typeof this.navLinks)[number]): string {
@@ -93,7 +100,7 @@ export class NavBar {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token'); localStorage.removeItem('pin_token'); localStorage.removeItem('current_user');
     this.closeAll();
     this.router.navigate(['/auth/login']);
   }
@@ -105,6 +112,7 @@ export class NavBar {
   showBackButton = computed(() => {
     const url = this.router.url;
     // Show back button on detail pages (communities/:id, groups/:id, etc.)
-    return /\/app\/communities\/[^/]+|groups\/[^/]+/.test(url);
+    return /\/app\/communities\/[^/]+|\/app\/my-groups\/[^/]+|\/app\/meetings\/[^/]+|groups\/[^/]+/.test(url);
   });
 }
+

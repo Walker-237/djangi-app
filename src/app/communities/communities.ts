@@ -1,7 +1,9 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, computed, inject, signal } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   LUCIDE_ICONS,
+  LucideAngularModule,
   LucideIconProvider,
   Search,
   Users,
@@ -13,17 +15,19 @@ import {
   ArrowRight,
 } from 'lucide-angular';
 import { LanguageService } from '../core/services/language.service';
-import { GroupsService } from '../core/services/groups.service';
+import { CommunitiesService } from '../core/services/communities.service';
+import { GroupsApiService } from '../core/services/groups.api.service';
 import { Community, Group } from '../core/models/models';
 
 @Component({
   selector: 'app-communities',
   standalone: true,
-  imports: [],
+  imports: [LucideAngularModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [
     {
       provide: LUCIDE_ICONS,
+      multi: true,
       useValue: new LucideIconProvider({
         Search,
         Users,
@@ -41,13 +45,18 @@ import { Community, Group } from '../core/models/models';
 })
 export class Communities {
   private readonly languageService = inject(LanguageService);
-  private readonly groupsService = inject(GroupsService);
+  private readonly communitiesService = inject(CommunitiesService);
+  private readonly groupsApiService = inject(GroupsApiService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly router = inject(Router);
 
   language = this.languageService.language;
   searchQuery = signal('');
+  loading = signal(false);
+  error = signal<string | null>(null);
 
-  readonly communities = this.groupsService.communities;
+  readonly communities = signal<Community[]>([]);
+  readonly myGroups = signal<Group[]>([]);
 
   filteredCommunities = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -55,30 +64,48 @@ export class Communities {
     return this.communities().filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        c.nameFr.toLowerCase().includes(q) ||
+        (c.nameFr ?? '').toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q),
     );
   });
 
-  /**
-   * "My groups" = first 2 groups across all communities.
-   * TODO: replace with real membership filter once auth/membership is wired.
-   */
-  readonly myGroups = computed<Group[]>(() => {
-    const groups: Group[] = [];
-    for (const community of this.communities()) {
-      groups.push(...community.groups);
-      if (groups.length >= 2) break;
-    }
-    return groups.slice(0, 2);
-  });
+  ngOnInit(): void {
+    this.loadCommunities();
+    this.loadMyGroups();
+  }
+
+  loadCommunities(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.communitiesService.getAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (communities) => {
+          this.communities.set(communities.map((community) => this.normalizeCommunity(community)));
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set(this.language() === 'fr' ? 'Impossible de charger les communautes.' : 'Unable to load communities.');
+          this.loading.set(false);
+        },
+      });
+  }
+
+  loadMyGroups(): void {
+    this.groupsApiService.getMyGroups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (groups) => this.myGroups.set(groups),
+        error: () => this.error.set(this.language() === 'fr' ? 'Impossible de charger vos groupes.' : 'Unable to load your groups.'),
+      });
+  }
 
   communityName(c: Community): string {
-    return this.language() === 'fr' ? c.nameFr : c.name;
+    return this.language() === 'fr' ? (c.nameFr ?? c.name) : c.name;
   }
 
   communityDescription(c: Community): string {
-    return this.language() === 'fr' ? c.descriptionFr : c.description;
+    return this.language() === 'fr' ? (c.descriptionFr ?? c.description) : c.description;
   }
 
   formatAmount(n: number): string {
@@ -86,7 +113,6 @@ export class Communities {
   }
 
   myPosition(group: Group): number {
-    // TODO: replace with logged-in user's actual position
     return group.members[0]?.position ?? 1;
   }
 
@@ -104,5 +130,17 @@ export class Communities {
 
   onSearchInput(value: string): void {
     this.searchQuery.set(value);
+  }
+
+  private normalizeCommunity(community: Community): Community {
+    const memberCount = community.memberCount ?? community.groups.reduce((sum, group) => sum + group.memberCount, 0);
+    return {
+      ...community,
+      memberCount,
+      location: community.location ?? community.category ?? community.name,
+      imageUrl: community.imageUrl ?? '/assets/image/communities/west-region.jpg',
+      nameFr: community.nameFr ?? community.name,
+      descriptionFr: community.descriptionFr ?? community.description,
+    };
   }
 }

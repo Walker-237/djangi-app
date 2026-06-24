@@ -1,0 +1,53 @@
+<section class="prf">
+  <header class="prf__header">
+    <div>
+      <p class="prf__eyebrow">{{ labels().since }}: {{ labels().memberSince }}</p>
+      <h1 class="prf__title">{{ labels().title }}</h1>
+      <p class="prf__subtitle">{{ labels().subtitle }}</p>
+    </div>
+    <button class="prf__action" type="button" (click)="toggleEditing()">
+      <lucide-icon [name]="editing() ? 'save' : 'pencil'" [size]="18" aria-hidden="true"></lucide-icon>
+      {{ editing() ? labels().save : labels().edit }}
+    </button>
+  </header>
+
+  <div class="prf__grid">
+    <article class="prf__card prf__identity">
+      <div class="prf__avatar">BK</div>
+      <div class="prf__identity-text">
+        <h2 class="prf__name">{{ name() }}</h2>
+        <p class="prf__phone">
+          <lucide-icon name="phone" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ phone() }}
+        </p>
+      </div>
+    </article>
+
+    <article class="prf__card prf__form">
+      <label class="prf__field">
+        <span class="prf__label">{{ labels().name }}</span>
+        <input class="prf__input" [value]="name()" (input)="name.set($any($event.target).value)" [disabled]="!editing()" />
+      </label>
+      <label class="prf__field">
+        <span class="prf__label">{{ labels().phone }}</span>
+        <input class="prf__input" [value]="phone()" (input)="phone.set($any($event.target).value)" [disabled]="!editing()" />
+      </label>
+      <label class="prf__field">
+        <span class="prf__label">{{ labels().since }}</span>
+        <input class="prf__input" [value]="labels().memberSince" disabled />
+      </label>
+    </article>
+  </div>
+
+  <div class="prf__stats">
+    @for (stat of stats; track stat.key) {
+      <article class="prf__stat">
+        <span class="prf__stat-icon">
+          <lucide-icon [name]="stat.icon" [size]="20" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="prf__stat-label">{{ label(stat.key) }}</span>
+        <strong class="prf__stat-value">{{ stat.value }}</strong>
+      </article>
+    }
+  </div>
+</section>

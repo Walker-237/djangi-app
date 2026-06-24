@@ -1,1 +1,303 @@
-<p>payouts works!</p>
+<!-- ═══════════════════════════════════════════════════════════
+     GROUP PAYOUTS  ·  Djangi Management System
+     ═══════════════════════════════════════════════════════════ -->
+
+@if (group(); as g) {
+  <div class="gp-page">
+
+    <!-- ── HEADER ──────────────────────────────────────────────────────── -->
+    <header class="gp-header">
+      <button type="button" class="gp-back-btn" (click)="goBack()" [attr.aria-label]="L().back">
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+      <div class="gp-header-body">
+        <h1 class="gp-header-title">{{ L().title }}</h1>
+        <p class="gp-header-sub">{{ g.name }}</p>
+      </div>
+    </header>
+
+    <!-- ── SUMMARY CARDS ───────────────────────────────────────────────── -->
+    <section class="gp-summary" aria-label="Résumé">
+      <div class="gp-summary-card gp-summary-card--green">
+        <div class="gp-summary-icon">
+          <lucide-icon name="banknote" [size]="20"></lucide-icon>
+        </div>
+        <p class="gp-summary-label">{{ L().totalPot }}</p>
+        <p class="gp-summary-value">{{ formatAmount(g.totalPot) }}</p>
+        <p class="gp-summary-currency">{{ g.currency }}</p>
+      </div>
+
+      <div class="gp-summary-card">
+        <div class="gp-summary-icon">
+          <lucide-icon name="users" [size]="20"></lucide-icon>
+        </div>
+        <p class="gp-summary-label">{{ L().cycleProgress }}</p>
+        <p class="gp-summary-value">{{ paidCount() }}/{{ totalCount() }}</p>
+        <p class="gp-summary-currency">{{ L().paid }}</p>
+      </div>
+
+      <div class="gp-summary-card">
+        <div class="gp-summary-icon">
+          <lucide-icon name="calendar" [size]="20"></lucide-icon>
+        </div>
+        <p class="gp-summary-label">{{ L().nextPayout }}</p>
+        <p class="gp-summary-value gp-summary-value--sm">{{ formatDate(g.nextPayoutDate ?? "") }}</p>
+        <p class="gp-summary-currency">{{ pendingPayouts().length }} {{ L().membersLeft }}</p>
+      </div>
+    </section>
+
+    <!-- ── CYCLE PROGRESS BAR ──────────────────────────────────────────── -->
+    <section class="gp-progress-section">
+      <div class="gp-progress-header">
+        <span class="gp-progress-label">{{ L().cycleProgress }}</span>
+        <span class="gp-progress-pct">{{ cycleProgress() }}%</span>
+      </div>
+      <div class="gp-progress-track" role="progressbar" [attr.aria-valuenow]="cycleProgress()" aria-valuemin="0" aria-valuemax="100">
+        <div class="gp-progress-fill" [style.width.%]="cycleProgress()"></div>
+      </div>
+    </section>
+
+    <!-- ── NEXT PAYOUT ALERT ───────────────────────────────────────────── -->
+    @if (nextPayout(); as nxt) {
+      <div class="gp-next-banner">
+        <div class="gp-next-banner-pulse"></div>
+        <div class="gp-next-banner-avatar">{{ nxt.memberInitials }}</div>
+        <div class="gp-next-banner-body">
+          <p class="gp-next-banner-label">{{ L().nextPayout }}</p>
+          <p class="gp-next-banner-name">{{ nxt.memberName }}</p>
+          <p class="gp-next-banner-date">{{ formatDate(nxt.date) }} · #{{ nxt.position }}/{{ totalCount() }}</p>
+        </div>
+        <div class="gp-next-banner-right">
+          <p class="gp-next-banner-amount">{{ formatAmount(nxt.amount) }}</p>
+          <p class="gp-next-banner-currency">{{ nxt.currency }}</p>
+        </div>
+      </div>
+
+      <!-- PROCESS BUTTON -->
+      <div class="gp-process-wrap">
+        <button type="button" class="gp-process-btn" (click)="openProcessModal()">
+          <lucide-icon name="trending-up" [size]="18" color="#fff"></lucide-icon>
+          {{ L().processBtn }}
+        </button>
+      </div>
+    }
+
+    <!-- ── ROTATION SCHEDULE ───────────────────────────────────────────── -->
+    <section class="gp-section">
+      <div class="gp-section-head">
+        <h2 class="gp-section-title">{{ L().schedule }}</h2>
+        <span class="gp-badge">{{ totalCount() }}</span>
+      </div>
+
+      <div class="gp-schedule-list">
+        @for (payout of payouts(); track payout.id) {
+          <div
+            class="gp-schedule-row"
+            [class.gp-schedule-row--next]="payout.status === 'next'"
+            [class.gp-schedule-row--late]="payout.status === 'late'"
+          >
+            <!-- Position badge -->
+            <div class="gp-pos-badge gp-pos--{{ payout.status }}">
+              {{ payout.position }}
+            </div>
+
+            <!-- Avatar -->
+            <div class="gp-member-avatar gp-avatar--{{ payout.status }}">
+              {{ payout.memberInitials }}
+              @if (payout.status === 'next') {
+                <span class="gp-avatar-pulse"></span>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="gp-schedule-info">
+              <p class="gp-schedule-name">{{ payout.memberName }}</p>
+              @if (payout.ref) {
+                <p class="gp-schedule-ref">{{ payout.ref }}</p>
+              }
+            </div>
+
+            <!-- Amount -->
+            <div class="gp-schedule-right">
+              <p class="gp-schedule-amount">{{ formatAmount(payout.amount) }} {{ payout.currency }}</p>
+              <!-- Status chip -->
+              <span class="gp-status-chip {{ statusClass(payout.status) }}">
+                <lucide-icon [name]="statusIcon(payout.status)" [size]="11"></lucide-icon>
+                {{ statusLabel(payout.status) }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ── PAYOUT HISTORY ──────────────────────────────────────────────── -->
+    <section class="gp-section">
+      <div class="gp-section-head">
+        <h2 class="gp-section-title">{{ L().history }}</h2>
+        <span class="gp-badge">{{ paidPayouts().length }}</span>
+      </div>
+
+      @if (paidPayouts().length === 0) {
+        <div class="gp-empty">
+          <lucide-icon name="refresh-cw" [size]="36" color="#A0A0A0"></lucide-icon>
+          <p>{{ L().emptyHistory }}</p>
+        </div>
+      } @else {
+        <div class="gp-history-list">
+          @for (payout of paidPayouts(); track payout.id; let last = $last) {
+            <div class="gp-history-row">
+              <div class="gp-history-icon">
+                <lucide-icon name="check-circle-2" [size]="18"></lucide-icon>
+              </div>
+              <div class="gp-history-info">
+                <p class="gp-history-name">{{ payout.memberName }}</p>
+                <p class="gp-history-ref">{{ payout.ref }}</p>
+              </div>
+              <div class="gp-history-right">
+                <p class="gp-history-amount">{{ formatAmount(payout.amount) }} {{ payout.currency }}</p>
+                <p class="gp-history-date">{{ formatDate(payout.date) }}</p>
+              </div>
+            </div>
+            @if (!last) { <div class="gp-divider"></div> }
+          }
+        </div>
+      }
+    </section>
+
+    <div class="gp-safe-area"></div>
+  </div>
+
+} @else {
+  <!-- ── NOT FOUND ──────────────────────────────────────────────────────── -->
+  <div class="gp-not-found">
+    <button type="button" class="gp-back-btn" (click)="goBack()">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <p>{{ L().noGroup }}</p>
+  </div>
+}
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PROCESS PAYOUT MODAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+@if (activeModal() === 'process') {
+  <div class="gp-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true">
+    <div class="gp-modal">
+
+      <!-- Drag handle -->
+      <div class="gp-modal-handle" aria-hidden="true"></div>
+
+      @if (modalStep() === 'confirm') {
+
+        <!-- HEADER -->
+        <div class="gp-modal-header">
+          <button type="button" class="gp-modal-close" (click)="closeModal()" aria-label="Fermer">
+            <lucide-icon name="x" [size]="20" color="#1B3A2D"></lucide-icon>
+          </button>
+          <div class="gp-modal-header-icon">
+            <lucide-icon name="trending-up" [size]="24" color="#fff"></lucide-icon>
+          </div>
+          <div>
+            <h2 class="gp-modal-title">{{ L().confirmTitle }}</h2>
+            <p class="gp-modal-subtitle">{{ L().confirmSubtitle }}</p>
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="gp-modal-body">
+          @if (nextPayout(); as nxt) {
+            <div class="gp-confirm-summary">
+
+              <!-- Recipient avatar -->
+              <div class="gp-confirm-avatar-wrap">
+                <div class="gp-confirm-avatar">{{ nxt.memberInitials }}</div>
+                <p class="gp-confirm-avatar-name">{{ nxt.memberName }}</p>
+                <p class="gp-confirm-avatar-pos">#{{ nxt.position }} / {{ totalCount() }}</p>
+              </div>
+
+              <!-- Amount highlight -->
+              <div class="gp-confirm-amount-block">
+                <p class="gp-confirm-amount">{{ formatAmount(nxt.amount) }}</p>
+                <p class="gp-confirm-currency">{{ nxt.currency }}</p>
+              </div>
+
+              <!-- Details rows -->
+              <div class="gp-confirm-rows">
+                <div class="gp-confirm-row">
+                  <span class="gp-confirm-row-label">{{ L().confirmTo }}</span>
+                  <span class="gp-confirm-row-value">{{ nxt.memberName }}</span>
+                </div>
+                <div class="gp-confirm-divider"></div>
+                <div class="gp-confirm-row">
+                  <span class="gp-confirm-row-label">{{ L().confirmAmount }}</span>
+                  <span class="gp-confirm-row-value gp-confirm-row-value--green">{{ formatAmount(nxt.amount) }} {{ nxt.currency }}</span>
+                </div>
+                <div class="gp-confirm-divider"></div>
+                <div class="gp-confirm-row">
+                  <span class="gp-confirm-row-label">{{ L().confirmDate }}</span>
+                  <span class="gp-confirm-row-value">{{ formatDate(nxt.date) }}</span>
+                </div>
+                <div class="gp-confirm-divider"></div>
+                <div class="gp-confirm-row">
+                  <span class="gp-confirm-row-label">{{ L().position }}</span>
+                  <span class="gp-confirm-row-value">#{{ nxt.position }} / {{ totalCount() }}</span>
+                </div>
+              </div>
+
+            </div>
+          }
+        </div>
+
+        <!-- FOOTER -->
+        <div class="gp-modal-footer">
+          <button type="button" class="gp-btn gp-btn--ghost" (click)="closeModal()" [disabled]="isProcessing()">
+            {{ L().cancel }}
+          </button>
+          <button type="button" class="gp-btn gp-btn--primary" (click)="confirmPayout()" [disabled]="isProcessing()">
+            @if (isProcessing()) {
+              <span class="gp-spinner"></span>
+              {{ L().processing }}
+            } @else {
+              {{ L().confirmBtn }}
+            }
+          </button>
+        </div>
+
+      } @else if (modalStep() === 'success') {
+
+        <!-- SUCCESS -->
+        <div class="gp-modal-header">
+          <div class="gp-modal-header-icon gp-modal-header-icon--success">
+            <lucide-icon name="circle-check" [size]="24" color="#fff"></lucide-icon>
+          </div>
+        </div>
+
+        <div class="gp-modal-body gp-modal-body--success">
+          <div class="gp-success-icon">
+            <lucide-icon name="circle-check" [size]="52" color="#4A7C59"></lucide-icon>
+          </div>
+          <h3 class="gp-success-title">{{ L().successTitle }}</h3>
+          <p class="gp-success-msg">{{ L().successMsg }}</p>
+          @if (nextPayout(); as nxt) {
+            <p class="gp-success-amount">{{ formatAmount(nxt.amount) }} {{ nxt.currency }}</p>
+            <p class="gp-success-to">→ {{ nxt.memberName }}</p>
+          }
+          <p class="gp-success-ref">{{ lastRef() }}</p>
+        </div>
+
+        <div class="gp-modal-footer gp-modal-footer--center">
+          <button type="button" class="gp-btn gp-btn--ghost" (click)="downloadReceipt()">
+            <lucide-icon name="download" [size]="15" color="#1B3A2D"></lucide-icon>
+            {{ L().downloadReceipt }}
+          </button>
+          <button type="button" class="gp-btn gp-btn--primary" (click)="closeModal()">
+            {{ L().close }}
+          </button>
+        </div>
+
+      }
+    </div>
+  </div>
+}

@@ -1,1 +1,222 @@
-<p>meeting-detail works!</p>
+<!-- ═══════════════════════════════════════════════════════
+     MEETING DETAIL PAGE · Djangi Management System
+     Component: MeetingDetailComponent · Standalone
+═══════════════════════════════════════════════════════ -->
+@if (meeting(); as m) {
+<div class="mdt-page">
+
+  <!-- ── HERO HEADER ── -->
+  <header class="mdt-hero" [style.--group-color]="m.groupColor">
+    <div class="mdt-hero__nav">
+      <button type="button" class="mdt-back-btn" (click)="goBack()">
+        <lucide-icon [img]="icons.ArrowLeft" [size]="18" aria-hidden="true"></lucide-icon>
+        {{ labels().back }}
+      </button>
+      <span class="mdt-hero__chip mdt-chip--{{ m.status }}">
+        {{ statusLabel(m.status) }}
+      </span>
+    </div>
+
+    <p class="mdt-hero__group">{{ m.groupName }}</p>
+    <h1 class="mdt-hero__title">{{ title(m) }}</h1>
+
+    <div class="mdt-hero__meta">
+      <span class="mdt-hero__meta-item">
+        <lucide-icon [img]="icons.Calendar" [size]="14" aria-hidden="true"></lucide-icon>
+        {{ formatDate(m.date) }}
+      </span>
+      <span class="mdt-hero__meta-item">
+        <lucide-icon [img]="icons.Clock" [size]="14" aria-hidden="true"></lucide-icon>
+        {{ formatTime(m.date) }}
+      </span>
+      <span class="mdt-hero__meta-item">
+        @if (m.isVirtual) {
+          <lucide-icon [img]="icons.Video" [size]="14" aria-hidden="true"></lucide-icon>
+          {{ labels().virtual }}
+        } @else {
+          <lucide-icon [img]="icons.MapPin" [size]="14" aria-hidden="true"></lucide-icon>
+          {{ labels().inPerson }}
+        }
+      </span>
+    </div>
+
+    <!-- CTA for upcoming meetings -->
+    @if (m.status === 'upcoming' || m.status === 'ongoing') {
+      <div class="mdt-hero__actions">
+        @if (m.isVirtual) {
+          <button type="button" class="mdt-btn mdt-btn--join">
+            <lucide-icon [img]="icons.Video" [size]="15" aria-hidden="true"></lucide-icon>
+            {{ labels().joinMeeting }}
+          </button>
+        }
+        <button type="button" class="mdt-btn mdt-btn--ghost">
+          <lucide-icon [img]="icons.Edit" [size]="15" aria-hidden="true"></lucide-icon>
+          {{ labels().editMeeting }}
+        </button>
+      </div>
+    }
+
+    @if (m.hasAiSummary) {
+      <button type="button" class="mdt-ai-pill" (click)="downloadSummary()">
+        ✦ {{ labels().download }}
+      </button>
+    }
+  </header>
+
+  <!-- ── TABS ── -->
+  <nav class="mdt-tabs" role="tablist">
+    @for (tab of tabs(); track tab.value) {
+      <button
+        type="button"
+        role="tab"
+        class="mdt-tab"
+        [class.mdt-tab--active]="activeTab() === tab.value"
+        (click)="activeTab.set(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <!-- ── TAB CONTENT ── -->
+  <main class="mdt-content">
+
+    <!-- INFO TAB -->
+    @if (activeTab() === 'info') {
+      <div class="mdt-section">
+        <div class="mdt-info-grid">
+          <div class="mdt-info-item">
+            <span class="mdt-info-label">{{ labels().date }}</span>
+            <span class="mdt-info-value">{{ formatDate(m.date) }}</span>
+          </div>
+          <div class="mdt-info-item">
+            <span class="mdt-info-label">{{ labels().time }}</span>
+            <span class="mdt-info-value">{{ formatTime(m.date) }}</span>
+          </div>
+          <div class="mdt-info-item">
+            <span class="mdt-info-label">{{ labels().duration }}</span>
+            <span class="mdt-info-value">{{ m.durationMin }} {{ labels().min }}</span>
+          </div>
+          <div class="mdt-info-item">
+            <span class="mdt-info-label">{{ labels().type }}</span>
+            <span class="mdt-info-value">
+              {{ m.isVirtual ? labels().virtual : labels().inPerson }}
+            </span>
+          </div>
+          <div class="mdt-info-item mdt-info-item--full">
+            <span class="mdt-info-label">{{ labels().location }}</span>
+            <span class="mdt-info-value">{{ location(m) }}</span>
+          </div>
+          <div class="mdt-info-item mdt-info-item--full">
+            <span class="mdt-info-label">{{ labels().group }}</span>
+            <span class="mdt-info-value">{{ m.groupName }}</span>
+          </div>
+        </div>
+
+        @if (m.status === 'completed') {
+          <div class="mdt-stat-row">
+            <div class="mdt-stat">
+              <span class="mdt-stat__value">{{ presentCount(m) }}/{{ m.totalMembers }}</span>
+              <span class="mdt-stat__label">{{ labels().presents }}</span>
+            </div>
+            <div class="mdt-stat">
+              <span class="mdt-stat__value">{{ m.durationMin }}{{ labels().min }}</span>
+              <span class="mdt-stat__label">{{ labels().duration }}</span>
+            </div>
+            <div class="mdt-stat">
+              <span class="mdt-stat__value">{{ m.agenda.length }}</span>
+              <span class="mdt-stat__label">{{ labels().agenda }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- AGENDA TAB -->
+    @if (activeTab() === 'agenda') {
+      <div class="mdt-section">
+        <ul class="mdt-agenda-list">
+          @for (item of m.agenda; track item.id; let i = $index) {
+            <li class="mdt-agenda-item" [class.mdt-agenda-item--done]="item.done">
+              <div class="mdt-agenda-item__dot">
+                @if (item.done) {
+                  <lucide-icon [img]="icons.CheckCircle" [size]="18" aria-hidden="true"></lucide-icon>
+                } @else {
+                  <lucide-icon [img]="icons.Circle" [size]="18" aria-hidden="true"></lucide-icon>
+                }
+              </div>
+              <div class="mdt-agenda-item__body">
+                <span class="mdt-agenda-item__num">{{ i + 1 }}.</span>
+                <span class="mdt-agenda-item__title">{{ agendaTitle(item) }}</span>
+                <span class="mdt-agenda-item__dur">{{ item.duration }}{{ labels().min }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- ATTENDEES TAB -->
+    @if (activeTab() === 'attendees') {
+      <div class="mdt-section">
+        <p class="mdt-attendee-summary">
+          {{ presentCount(m) }} {{ labels().of }} {{ m.totalMembers }} {{ labels().presents }}
+        </p>
+        <ul class="mdt-attendee-list">
+          @for (a of m.attendees; track a.id) {
+            <li class="mdt-attendee-card">
+              <div class="mdt-avatar" [class.mdt-avatar--absent]="!a.present">
+                {{ a.avatar }}
+              </div>
+              <div class="mdt-attendee-info">
+                <span class="mdt-attendee-name">{{ a.name }}</span>
+                <span class="mdt-attendee-phone">{{ a.phone }}</span>
+              </div>
+              <div class="mdt-attendee-badges">
+                <span class="mdt-badge" [class.mdt-badge--green]="a.present" [class.mdt-badge--grey]="!a.present">
+                  {{ a.present ? labels().present : labels().absent }}
+                </span>
+                <span class="mdt-badge" [class.mdt-badge--green]="a.paid" [class.mdt-badge--red]="!a.paid">
+                  {{ a.paid ? labels().paid : labels().unpaid }}
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- NOTES TAB -->
+    @if (activeTab() === 'notes') {
+      <div class="mdt-section">
+        @if (notes(m)) {
+          <div class="mdt-notes-body">{{ notes(m) }}</div>
+        } @else {
+          <p class="mdt-empty-text">{{ labels().noNotes }}</p>
+        }
+      </div>
+    }
+
+    <!-- AI SUMMARY TAB -->
+    @if (activeTab() === 'ai') {
+      <div class="mdt-section">
+        @if (aiSummary(m)) {
+          <div class="mdt-ai-card">
+            <div class="mdt-ai-card__header">
+              ✦ {{ labels().aiSummary }}
+            </div>
+            <div class="mdt-ai-card__body">{{ aiSummary(m) }}</div>
+            <button type="button" class="mdt-btn mdt-btn--dl" (click)="downloadSummary()">
+              <lucide-icon [img]="icons.Download" [size]="14" aria-hidden="true"></lucide-icon>
+              {{ labels().download }}
+            </button>
+          </div>
+        } @else {
+          <p class="mdt-empty-text">{{ labels().noSummary }}</p>
+        }
+      </div>
+    }
+
+  </main>
+</div>
+}
