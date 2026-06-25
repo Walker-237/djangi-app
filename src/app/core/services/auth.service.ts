@@ -41,6 +41,11 @@ export class AuthService {
     return this.api.get<User>('/auth/me').pipe(tap((user) => this.tokenService.saveUser(user)));
   }
 
+  completeProfile(fullName: string, email: string): Observable<User> {
+    return this.api.post<User>('/auth/complete-profile', { fullName, email })
+      .pipe(tap((user) => this.tokenService.saveUser(user)));
+  }
+
   logout(): void {
     this.tokenService.clearAll();
     this.router.navigate(['/auth/login']);

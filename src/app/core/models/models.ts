@@ -1,11 +1,12 @@
 export interface User {
   id: number;
   fullName: string | null;
-  initials: string;
   email: string | null;
   phoneNumber: string;
   avatarUrl: string | null;
   role: 'user' | 'admin';
+  initials: string | null;
+  createdAt: string | null;
   phoneVerified: boolean;
   pinSet: boolean;
   idStatus?: 'pending' | 'submitted' | 'approved' | 'rejected';
@@ -54,6 +55,7 @@ export interface Group {
   totalPot: number;
   nextPayoutMemberId: number | string | null;
   nextPayoutDate: string | null;
+  leaderId?: number | null;
   members: GroupMember[];
   createdAt: string;
 }
@@ -124,8 +126,13 @@ export interface Meeting {
   date?: string;
   durationMinutes?: number;
   attendeeCount?: number;
+  aiSummary?: string;
   notes?: string;
   hasAiSummary?: boolean;
+  
+  // Added fields
+  mode?: 'physical' | 'online';
+  meetingLink?: string;
 }
 
 export interface MeetingSummary {
@@ -180,6 +187,8 @@ export interface Wallet {
   currency: string;
   createdAt: string;
   updatedAt: string;
+  monthlyDelta: number;
+  activeGroups: number;
 }
 
 export interface IdVerification {

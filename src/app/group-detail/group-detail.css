@@ -2,7 +2,7 @@
 .gd-wrap {
   min-height: 100svh;
   background: #F7F3ED;
-  padding-bottom: 8rem;
+  padding-bottom: 14rem;
 }
 
 /* ── HERO ── */
@@ -588,12 +588,12 @@
 /* ── MEMBER BOTTOM BAR ── */
 .gd-member-bar {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0; right: 0; bottom: calc(80px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  padding: 1rem 1.25rem 1rem;
   background: #fff;
   border-top: 1px solid #F3F4F6;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
@@ -647,10 +647,10 @@
 /* ── NON-MEMBER CTA ── */
 .gd-cta-bar {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: calc(80px + env(safe-area-inset-bottom)); left: 0; right: 0;
   background: #fff;
   border-top: 1px solid #F3F4F6;
-  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  padding: 1rem 1.25rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;

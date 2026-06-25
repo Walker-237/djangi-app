@@ -1,288 +1,194 @@
-import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { inject } from '@angular/core';
-import {
-  LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
-  Calendar, Clock, MapPin, Users, Video, ArrowLeft,
-  CheckCircle, Circle, Download, FileText, Sparkles,
-  Phone, MessageSquare, MoreVertical, Edit, Trash2,
-} from 'lucide-angular';
-import { Meeting, MeetingStatus } from '../meetings/meetings';
-
-const ICONS = {
-  Calendar, Clock, MapPin, Users, Video, ArrowLeft,
-  CheckCircle, Circle, Download, FileText, Sparkles,
-  Phone, MessageSquare, MoreVertical, Edit, Trash2,
-};
-
-type Lang = 'fr' | 'en';
-type MeetingDetailTab = 'info' | 'agenda' | 'attendees' | 'notes' | 'ai';
-type MeetingDetailTabItem = {
-  value: MeetingDetailTab;
-  label: string;
-};
-
-interface Attendee {
-  id:     string;
-  name:   string;
-  phone:  string;
-  avatar: string;
-  paid:   boolean;
-  present: boolean;
-}
-
-interface AgendaItem {
-  id:        string;
-  titleFr:   string;
-  titleEn:   string;
-  done:      boolean;
-  duration:  number;
-}
-
-interface MeetingDetail extends Meeting {
-  attendees:   Attendee[];
-  agenda:      AgendaItem[];
-  notesFr:     string;
-  notesEn:     string;
-  aiSummaryFr: string;
-  aiSummaryEn: string;
-}
-
-const LABELS = {
-  fr: {
-    back:          'Retour',
-    info:          'Informations',
-    agenda:        'Ordre du jour',
-    attendees:     'Participants',
-    notes:         'Notes de réunion',
-    aiSummary:     'Résumé IA',
-    date:          'Date',
-    time:          'Heure',
-    duration:      'Durée',
-    location:      'Lieu',
-    type:          'Type',
-    group:         'Groupe',
-    virtual:       'Virtuelle',
-    inPerson:      'Présentiel',
-    min:           'min',
-    present:       'présent',
-    absent:        'absent',
-    paid:          'à jour',
-    unpaid:        'en retard',
-    upcoming:      'À venir',
-    ongoing:       'En cours',
-    completed:     'Terminée',
-    cancelled:     'Annulée',
-    joinMeeting:   'Rejoindre',
-    editMeeting:   'Modifier',
-    cancelMeeting: 'Annuler',
-    download:      'Télécharger le résumé',
-    noNotes:       'Aucune note disponible.',
-    noSummary:     'Le résumé IA sera disponible après la réunion.',
-    today:         "Aujourd'hui",
-    tomorrow:      'Demain',
-    yesterday:     'Hier',
-    of:            'sur',
-    presents:      'présents',
-  },
-  en: {
-    back:          'Back',
-    info:          'Info',
-    agenda:        'Agenda',
-    attendees:     'Attendees',
-    notes:         'Meeting Notes',
-    aiSummary:     'AI Summary',
-    date:          'Date',
-    time:          'Time',
-    duration:      'Duration',
-    location:      'Location',
-    type:          'Type',
-    group:         'Group',
-    virtual:       'Virtual',
-    inPerson:      'In person',
-    min:           'min',
-    present:       'present',
-    absent:        'absent',
-    paid:          'up to date',
-    unpaid:        'overdue',
-    upcoming:      'Upcoming',
-    ongoing:       'Ongoing',
-    completed:     'Completed',
-    cancelled:     'Cancelled',
-    joinMeeting:   'Join',
-    editMeeting:   'Edit',
-    cancelMeeting: 'Cancel',
-    download:      'Download summary',
-    noNotes:       'No notes available.',
-    noSummary:     'AI summary will be available after the meeting.',
-    today:         'Today',
-    tomorrow:      'Tomorrow',
-    yesterday:     'Yesterday',
-    of:            'of',
-    presents:      'present',
-  },
-} as const;
-
-const now = Date.now();
-
-const MOCK_DETAILS: Record<string, MeetingDetail> = {
-  m1: {
-    id: 'm1', groupId: 'g1', groupName: 'Tontine Famille', groupColor: '#1B3A2D',
-    titleFr: 'Réunion mensuelle — Juillet', titleEn: 'Monthly Meeting — July',
-    date: new Date(now + 3_600_000 * 3), durationMin: 90,
-    locationFr: 'Google Meet', locationEn: 'Google Meet',
-    isVirtual: true, status: 'upcoming',
-    attendeeCount: 3, totalMembers: 5, hasAiSummary: false,
-    attendees: [
-      { id: 'a1', name: 'Marie Nguema',    phone: '+237 6 70 00 01', avatar: 'MN', paid: true,  present: true  },
-      { id: 'a2', name: 'Paul Biya Jr.',   phone: '+237 6 70 00 02', avatar: 'PB', paid: true,  present: true  },
-      { id: 'a3', name: 'Élise Fotso',     phone: '+237 6 70 00 03', avatar: 'EF', paid: false, present: true  },
-      { id: 'a4', name: 'Jean-Marc Essoh', phone: '+237 6 70 00 04', avatar: 'JE', paid: true,  present: false },
-      { id: 'a5', name: 'Carine Mbassi',   phone: '+237 6 70 00 05', avatar: 'CM', paid: false, present: false },
-    ],
-    agenda: [
-      { id: 'ag1', titleFr: 'Tour de table et présences',        titleEn: 'Roll call',                     done: false, duration: 10 },
-      { id: 'ag2', titleFr: 'Collecte des cotisations du mois',  titleEn: 'Monthly contribution collection', done: false, duration: 20 },
-      { id: 'ag3', titleFr: 'Désignation du bénéficiaire',       titleEn: 'Beneficiary selection',          done: false, duration: 15 },
-      { id: 'ag4', titleFr: 'Discussion des pénalités en retard', titleEn: 'Late penalties discussion',      done: false, duration: 20 },
-      { id: 'ag5', titleFr: 'Questions diverses',                 titleEn: 'Any other business',            done: false, duration: 25 },
-    ],
-    notesFr:     '',
-    notesEn:     '',
-    aiSummaryFr: '',
-    aiSummaryEn: '',
-  },
-  m4: {
-    id: 'm4', groupId: 'g1', groupName: 'Tontine Famille', groupColor: '#1B3A2D',
-    titleFr: 'Réunion mensuelle — Juin', titleEn: 'Monthly Meeting — June',
-    date: new Date(now - 86_400_000 * 5), durationMin: 90,
-    locationFr: 'Google Meet', locationEn: 'Google Meet',
-    isVirtual: true, status: 'completed',
-    attendeeCount: 4, totalMembers: 5, hasAiSummary: true,
-    attendees: [
-      { id: 'a1', name: 'Marie Nguema',    phone: '+237 6 70 00 01', avatar: 'MN', paid: true,  present: true  },
-      { id: 'a2', name: 'Paul Biya Jr.',   phone: '+237 6 70 00 02', avatar: 'PB', paid: true,  present: true  },
-      { id: 'a3', name: 'Élise Fotso',     phone: '+237 6 70 00 03', avatar: 'EF', paid: true,  present: true  },
-      { id: 'a4', name: 'Jean-Marc Essoh', phone: '+237 6 70 00 04', avatar: 'JE', paid: true,  present: true  },
-      { id: 'a5', name: 'Carine Mbassi',   phone: '+237 6 70 00 05', avatar: 'CM', paid: false, present: false },
-    ],
-    agenda: [
-      { id: 'ag1', titleFr: 'Tour de table et présences',        titleEn: 'Roll call',                     done: true, duration: 10 },
-      { id: 'ag2', titleFr: 'Collecte des cotisations du mois',  titleEn: 'Monthly contribution collection', done: true, duration: 20 },
-      { id: 'ag3', titleFr: 'Désignation du bénéficiaire',       titleEn: 'Beneficiary selection',          done: true, duration: 15 },
-      { id: 'ag4', titleFr: 'Discussion des pénalités en retard', titleEn: 'Late penalties discussion',      done: true, duration: 20 },
-      { id: 'ag5', titleFr: 'Questions diverses',                 titleEn: 'Any other business',            done: false, duration: 25 },
-    ],
-    notesFr: 'La réunion s\'est déroulée normalement. Élise Fotso a été désignée comme bénéficiaire du mois de juin. Carine Mbassi est absente et doit payer une pénalité de 2 000 XAF. Prochaine réunion prévue le 15 juillet.',
-    notesEn: 'The meeting went smoothly. Élise Fotso was selected as the June beneficiary. Carine Mbassi was absent and owes a 2,000 XAF penalty. Next meeting scheduled for July 15th.',
-    aiSummaryFr: '**Points clés :** La réunion de juin a réuni 4 membres sur 5. Élise Fotso a reçu le versement mensuel de 50 000 XAF. Une pénalité de 2 000 XAF a été infligée à Carine Mbassi pour absence injustifiée. Le groupe reste en bonne santé financière avec un taux de recouvrement de 80%.',
-    aiSummaryEn: '**Key points:** The June meeting gathered 4 of 5 members. Élise Fotso received the monthly payout of 50,000 XAF. A 2,000 XAF penalty was issued to Carine Mbassi for unjustified absence. The group remains financially healthy with an 80% collection rate.',
-  },
-};
-
-// Fallback for IDs not in mock
-function buildFallback(id: string): MeetingDetail {
-  return {
-    id, groupId: 'g1', groupName: 'Groupe', groupColor: '#4A7C59',
-    titleFr: 'Réunion', titleEn: 'Meeting',
-    date: new Date(), durationMin: 60,
-    locationFr: 'À définir', locationEn: 'TBD',
-    isVirtual: false, status: 'upcoming',
-    attendeeCount: 0, totalMembers: 0, hasAiSummary: false,
-    attendees: [], agenda: [],
-    notesFr: '', notesEn: '', aiSummaryFr: '', aiSummaryEn: '',
-  };
-}
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, Calendar, Clock, ArrowLeft, CheckCircle, FileText, Sparkles, Users, RefreshCw, Video, Upload, Mic, Loader, X } from 'lucide-angular';
+import { marked } from 'marked';
+import { MeetingsService } from '../core/services/meetings.service';
+import { LanguageService } from '../core/services/language.service';
+import { TokenService } from '../core/services/token.service';
+import { ApiService } from '../core/services/api.service';
+import { Meeting } from '../core/models/models';
 
 @Component({
   selector: 'app-meeting-detail',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
-  providers: [
-    { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(ICONS) },
-  ],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ Calendar, Clock, ArrowLeft, CheckCircle, FileText, Sparkles, Users, RefreshCw, Video, Upload, Mic, Loader, X }) }],
   templateUrl: './meeting-detail.html',
   styleUrls: ['./meeting-detail.css'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class MeetingDetailComponent implements OnInit {
-  private route  = inject(ActivatedRoute);
-  private router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly meetingsService = inject(MeetingsService);
+  private readonly languageService = inject(LanguageService);
+  private readonly tokenService = inject(TokenService);
+  private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  language    = signal<Lang>('fr');
-  activeTab   = signal<MeetingDetailTab>('info');
-  meeting     = signal<MeetingDetail | null>(null);
-  icons       = ICONS;
+  language = this.languageService.language;
+  loading = signal(false);
+  meeting = signal<Meeting | null>(null);
+  groupId = signal('');
 
-  labels = computed(() => LABELS[this.language()]);
+  generatingSummary = signal(false);
+  summaryError = signal('');
+  showAudioUpload = signal(false);
+  selectedAudioFile = signal<File | null>(null);
 
-  tabs = computed<MeetingDetailTabItem[]>(() => {
-    const l = this.labels();
+  onAudioFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedAudioFile.set(input.files[0]);
+      this.summaryError.set('');
+    }
+  }
+
+  renderMarkdown(text: string): string {
+    return marked(text ?? '') as string;
+  }
+
+  readonly isLeader = computed(() => {
+    const user = this.tokenService.getUser();
     const m = this.meeting();
-    const base: MeetingDetailTabItem[] = [
-      { value: 'info', label: l.info },
-      { value: 'agenda', label: l.agenda },
-      { value: 'attendees', label: l.attendees },
-      { value: 'notes', label: l.notes },
-    ];
-    if (m?.hasAiSummary) base.push({ value: 'ai', label: l.aiSummary });
-    return base;
+    if (!user || !m) return false;
+    return (m as any).leaderId === user.id || this.tokenService.isAdmin();
   });
 
-  ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
-    this.meeting.set(MOCK_DETAILS[id] ?? buildFallback(id));
+  ngOnInit(): void {
+    const meetingId = this.route.snapshot.paramMap.get('id') ?? '';
+    const groupId = this.route.snapshot.queryParamMap.get('groupId') ?? '';
+    this.groupId.set(groupId);
+    if (!meetingId || !groupId) return;
+    this.loading.set(true);
+    this.meetingsService.getById(groupId, meetingId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (m) => { this.meeting.set(m); this.loading.set(false); },
+        error: () => this.loading.set(false),
+      });
   }
 
-  title(m: MeetingDetail)     { return this.language() === 'fr' ? m.titleFr     : m.titleEn; }
-  location(m: MeetingDetail)  { return this.language() === 'fr' ? m.locationFr  : m.locationEn; }
-  notes(m: MeetingDetail)     { return this.language() === 'fr' ? m.notesFr     : m.notesEn; }
-  aiSummary(m: MeetingDetail) { return this.language() === 'fr' ? m.aiSummaryFr : m.aiSummaryEn; }
-  agendaTitle(a: AgendaItem)  { return this.language() === 'fr' ? a.titleFr     : a.titleEn; }
+  async generateSummary(): Promise<void> {
+    const m = this.meeting();
+    if (!m) return;
+    this.generatingSummary.set(true);
+    this.summaryError.set('');
 
-  statusLabel(s: MeetingStatus): string {
-    const l = this.labels();
-    return ({ upcoming: l.upcoming, ongoing: l.ongoing, completed: l.completed, cancelled: l.cancelled })[s];
+    try {
+      const lang = this.language();
+      const prompt = lang === 'fr'
+        ? `Tu es un assistant pour une tontine (groupe d'épargne). Génère un résumé structuré de cette réunion de groupe en français.
+
+Titre de la réunion: ${m.title}
+Date: ${this.formatDate(m.meetingDate ?? m.date ?? '')}
+Durée: ${m.durationMinutes ?? 'Non précisée'} minutes
+Participants: ${m.attendeeCount ?? 'Non précisé'}
+Notes du leader: ${m.notes ?? 'Aucune note fournie'}
+
+Génère un résumé avec: points clés discutés, décisions prises, actions à suivre. Sois concis et professionnel.`
+        : `You are an assistant for a tontine (savings group). Generate a structured summary of this group meeting in English.
+
+Meeting title: ${m.title}
+Date: ${this.formatDate(m.meetingDate ?? m.date ?? '')}
+Duration: ${m.durationMinutes ?? 'Not specified'} minutes
+Attendees: ${m.attendeeCount ?? 'Not specified'}
+Leader notes: ${m.notes ?? 'No notes provided'}
+
+Generate a summary with: key points discussed, decisions made, follow-up actions. Be concise and professional.`;
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      const data = await response.json();
+      const summary = data.content?.[0]?.text ?? '';
+
+      if (!summary) throw new Error('No summary generated');
+
+      // Save to backend
+      this.api.post<Meeting>(
+        `/groups/${this.groupId()}/meetings/${m.id}/summarize`,
+        { summary }
+      ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (updated) => {
+          this.meeting.set({ ...m, aiSummary: summary, hasAiSummary: true });
+          this.generatingSummary.set(false);
+        },
+        error: () => {
+          // Even if save fails, show the summary locally
+          this.meeting.set({ ...m, aiSummary: summary, hasAiSummary: true });
+          this.generatingSummary.set(false);
+        },
+      });
+
+    } catch (err) {
+      this.summaryError.set(this.language() === 'fr'
+        ? 'Erreur lors de la génération du résumé.'
+        : 'Error generating summary.');
+      this.generatingSummary.set(false);
+    }
   }
 
-  formatDate(date: Date): string {
-    const diff = Math.round((date.getTime() - Date.now()) / 86_400_000);
-    const l    = this.labels();
-    if (diff === 0)  return l.today;
-    if (diff === 1)  return l.tomorrow;
-    if (diff === -1) return l.yesterday;
-    return date.toLocaleDateString(
+  formatDate(iso: string): string {
+    if (!iso) return '-';
+    return new Date(iso).toLocaleDateString(
       this.language() === 'fr' ? 'fr-FR' : 'en-GB',
       { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
     );
   }
 
-  formatTime(date: Date): string {
-    return date.toLocaleTimeString(
+  formatTime(iso: string): string {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString(
       this.language() === 'fr' ? 'fr-FR' : 'en-GB',
       { hour: '2-digit', minute: '2-digit' }
     );
   }
 
-  presentCount(m: MeetingDetail): number {
-    return m.attendees.filter(a => a.present).length;
+  statusLabel(status: string): string {
+    const map: Record<string, { fr: string; en: string }> = {
+      upcoming: { fr: 'À venir', en: 'Upcoming' },
+      completed: { fr: 'Terminée', en: 'Completed' },
+      cancelled: { fr: 'Annulée', en: 'Cancelled' },
+    };
+    return (this.language() === 'fr' ? map[status]?.fr : map[status]?.en) ?? status;
   }
 
-  goBack() { this.router.navigate(['/app/meetings']); }
+  uploadAndSummarize(m: Meeting): void {
+    const file = this.selectedAudioFile();
+    if (!file) return;
 
-  downloadSummary() {
-    const m = this.meeting();
-    if (!m) return;
-    const content = this.aiSummary(m) || this.notes(m);
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `${this.title(m).replace(/\s+/g, '-')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    this.generatingSummary.set(true);
+    this.summaryError.set('');
+
+    this.meetingsService.summarizeAudio(this.groupId(), m.id, file, this.language())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.meeting.set({ ...m, aiSummary: updated.aiSummary, hasAiSummary: true });
+          this.generatingSummary.set(false);
+          this.showAudioUpload.set(false);
+          this.selectedAudioFile.set(null);
+        },
+        error: () => {
+          this.summaryError.set(this.language() === 'fr'
+            ? 'Erreur lors du traitement audio.'
+            : 'Error processing audio.');
+          this.generatingSummary.set(false);
+        },
+      });
   }
+
+  goBack(): void { this.router.navigate(['/app/meetings']); }
 }
 
 export { MeetingDetailComponent as MeetingDetail };

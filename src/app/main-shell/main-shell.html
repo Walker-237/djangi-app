@@ -21,11 +21,11 @@
     <div class="mt-auto border-t border-white/10 pt-4">
       <div class="mb-4 flex items-center gap-2 rounded-2xl bg-white/5 p-2">
         <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#C9A84C] text-sm font-bold text-[#1B3A2D]">
-          BK
+          {{ userInitials() }}
         </span>
         <span class="min-w-0">
-          <span class="block truncate text-sm font-semibold">{{ labels().userName }}</span>
-          <span class="block truncate text-xs text-white/50">{{ labels().userRole }}</span>
+          <span class="block truncate text-sm font-semibold">{{ userName() }}</span>
+          <span class="block truncate text-xs text-white/50">{{ userRole() }}</span>
         </span>
       </div>
 
@@ -78,7 +78,7 @@
           class="flex h-10 w-10 items-center justify-center rounded-full bg-[#1B3A2D] text-sm font-bold text-white"
           aria-label="Profile"
         >
-          BK
+          {{ userInitials() }}
         </a>
       </div>
     </header>

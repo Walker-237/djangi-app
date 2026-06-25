@@ -19,6 +19,7 @@ import {
 import { NavBar } from '../components/nav-bar/nav-bar';
 import { Language, LanguageService } from '../core/services/language.service';
 import { NAV_ITEMS } from '../core/config/nav-items';
+import { TokenService } from '../core/services/token.service';
 
 const LABELS = {
   fr: {
@@ -87,6 +88,27 @@ export class MainShell {
 
   navItems = NAV_ITEMS;
   language = this.languageService.language;
+  private readonly tokenService = inject(TokenService);
+  
+  userInitials = computed(() => {
+      const user = this.tokenService.getUser();
+      if (!user) return '?';
+      if (user.initials) return user.initials;
+      if (user.fullName) return user.fullName.charAt(0).toUpperCase();
+      if (user.phoneNumber) return user.phoneNumber.slice(-2);
+      return '?';
+  });
+
+  userName = computed(() => {
+    const user = this.tokenService.getUser();
+    return user?.fullName || user?.phoneNumber || (this.language() === 'fr' ? 'Membre' : 'Member');
+  });
+
+  userRole = computed(() => {
+    const user = this.tokenService.getUser();
+    return user?.role === 'admin' ? 'Admin' : (this.language() === 'fr' ? 'Membre Djangi' : 'Djangi Member');
+  });
+    
   unreadNotifCount = signal(3);
   currentUrl = signal(this.router.url);
   labels = computed(() => LABELS[this.language()]);
@@ -114,7 +136,9 @@ export class MainShell {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('pin_token');
+    localStorage.removeItem('current_user');
     this.router.navigate(['/auth/login']);
   }
 }

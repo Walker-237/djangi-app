@@ -1,46 +1,29 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, computed, inject, signal } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  BadgeCheck,
-  Calendar,
-  CircleDollarSign,
-  LUCIDE_ICONS,
-  LucideAngularModule,
-  LucideIconProvider,
-  Pencil,
-  Phone,
-  Save,
-  User,
-  Users,
+  BadgeCheck, Calendar, CircleDollarSign, LUCIDE_ICONS,
+  LucideAngularModule, LucideIconProvider, Pencil, Phone, Save, User, Users,
 } from 'lucide-angular';
 import { LanguageService } from '../core/services/language.service';
+import { AuthService } from '../core/services/auth.service';
 
 const LABELS = {
   fr: {
-    title: 'Profil',
-    subtitle: 'Informations personnelles et activite Djangi.',
-    edit: 'Modifier',
-    save: 'Enregistrer',
-    name: 'Nom complet',
-    phone: 'Telephone',
-    since: 'Membre depuis',
-    groups: 'Groupes rejoints',
-    contributed: 'Total cotise',
-    payouts: 'Versements recus',
-    memberSince: 'Janvier 2024',
+    title: 'Profil', subtitle: 'Informations personnelles et activité Djangi.',
+    edit: 'Modifier', save: 'Enregistrer', cancel: 'Annuler',
+    name: 'Nom complet', phone: 'Téléphone', email: 'Email', since: 'Membre depuis',
+    groups: 'Groupes rejoints', contributed: 'Total cotisé', payouts: 'Versements reçus',
+    saving: 'Enregistrement...', saveError: 'Erreur lors de la sauvegarde.',
+    namePlaceholder: 'Entrez votre nom complet', emailPlaceholder: 'Entrez votre email',
   },
   en: {
-    title: 'Profile',
-    subtitle: 'Personal information and Djangi activity.',
-    edit: 'Edit',
-    save: 'Save',
-    name: 'Full name',
-    phone: 'Phone',
-    since: 'Member since',
-    groups: 'Groups joined',
-    contributed: 'Total contributed',
-    payouts: 'Payouts received',
-    memberSince: 'January 2024',
+    title: 'Profile', subtitle: 'Personal information and Djangi activity.',
+    edit: 'Edit', save: 'Save', cancel: 'Cancel',
+    name: 'Full name', phone: 'Phone', email: 'Email', since: 'Member since',
+    groups: 'Groups joined', contributed: 'Total contributed', payouts: 'Payouts received',
+    saving: 'Saving...', saveError: 'Error saving profile.',
+    namePlaceholder: 'Enter your full name', emailPlaceholder: 'Enter your email',
   },
 } as const;
 
@@ -51,45 +34,80 @@ const LABELS = {
   templateUrl: './profile.html',
   styleUrl: './profile.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  providers: [
-    {
-      provide: LUCIDE_ICONS,
-      multi: true,
-      useValue: new LucideIconProvider({
-        BadgeCheck,
-        Calendar,
-        CircleDollarSign,
-        Pencil,
-        Phone,
-        Save,
-        User,
-        Users,
-      }),
-    },
-  ],
+  providers: [{
+    provide: LUCIDE_ICONS, multi: true,
+    useValue: new LucideIconProvider({ BadgeCheck, Calendar, CircleDollarSign, Pencil, Phone, Save, User, Users }),
+  }],
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   private readonly languageService = inject(LanguageService);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   language = this.languageService.language;
   labels = computed(() => LABELS[this.language()]);
+
   editing = signal(false);
-  name = signal('Brice Kamga');
-  phone = signal('+237 6 77 24 18 90');
+  saving = signal(false);
+  saveError = signal('');
 
-  stats = [
-    { icon: 'users', key: 'groups', value: '4' },
-    { icon: 'circle-dollar-sign', key: 'contributed', value: '1 850 000 XAF' },
-    { icon: 'badge-check', key: 'payouts', value: '3' },
-  ] as const;
+  name = signal('');
+  phone = signal('');
+  email = signal('');
+  memberSince = signal('');
+  initials = signal('?');
 
-  label(key: 'groups' | 'contributed' | 'payouts'): string {
-    return this.labels()[key];
+  editName = signal('');
+  editEmail = signal('');
+
+  ngOnInit(): void {
+    this.authService.me()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (user) => {
+          this.name.set(user.fullName ?? '');
+          this.phone.set(user.phoneNumber ?? '');
+          this.email.set(user.email ?? '');
+          this.initials.set(user.initials ?? (user.fullName?.charAt(0).toUpperCase() ?? '?'));
+          this.memberSince.set(user.createdAt ? new Date(user.createdAt).toLocaleDateString(
+            this.language() === 'fr' ? 'fr-FR' : 'en-GB',
+            { month: 'long', year: 'numeric' }
+          ) : '');
+        },
+      });
   }
 
-  toggleEditing(): void {
-    this.editing.update((value) => !value);
+  startEditing(): void {
+    this.editName.set(this.name());
+    this.editEmail.set(this.email());
+    this.saveError.set('');
+    this.editing.set(true);
+  }
+
+  cancelEditing(): void {
+    this.editing.set(false);
+    this.saveError.set('');
+  }
+
+  saveProfile(): void {
+    if (!this.editName().trim()) return;
+    this.saving.set(true);
+    this.saveError.set('');
+    this.authService.completeProfile(this.editName().trim(), this.editEmail().trim())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (user) => {
+          this.name.set(user.fullName ?? '');
+          this.email.set(user.email ?? '');
+          this.initials.set(user.initials ?? (user.fullName?.charAt(0).toUpperCase() ?? '?'));
+          this.saving.set(false);
+          this.editing.set(false);
+        },
+        error: () => {
+          this.saveError.set(this.labels().saveError);
+          this.saving.set(false);
+        },
+      });
   }
 }
-
 export { ProfileComponent as Profile };

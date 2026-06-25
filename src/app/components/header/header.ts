@@ -26,6 +26,7 @@ import {
 } from 'lucide-angular';
 import { Language, LanguageService } from '../../core/services/language.service';
 import { hasStoredToken } from '../../core/services/auth-token';
+import { TokenService } from '../../core/services/token.service';
 
 @Component({
   selector: 'app-header',
@@ -60,6 +61,17 @@ export class Header {
   private readonly platformId = inject(PLATFORM_ID);
 
   language = this.languageService.language;
+  private readonly tokenService = inject(TokenService);
+
+  userInitials = computed(() => {
+    const user = this.tokenService.getUser();
+    if (!user) return '?';
+    if (user.initials) return user.initials;
+    if (user.fullName) return user.fullName.charAt(0).toUpperCase();
+    if (user.phoneNumber) return user.phoneNumber.slice(-2);
+    return '?';
+  });
+  
   isLoggedIn = computed(() => {
     if (!isPlatformBrowser(this.platformId)) return false;
     return hasStoredToken();

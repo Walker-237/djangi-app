@@ -183,7 +183,7 @@
         </div>
       </div>
 
-      <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:80px;"><button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button><button class="wlt-btn wlt-btn--primary" (click)="submitPin()" [disabled]="pinInput().length < 4">
+      <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;"><button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button><button class="wlt-btn wlt-btn--primary" (click)="submitPin()" [disabled]="pinInput().length < 4">
           {{ labels().pinConfirm }}
         </button>
       </div>
@@ -233,7 +233,7 @@
           </div>
         </div>
       </div>
-      <div class="wlt-modal__footer wlt-modal__footer--center">
+      <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;">
         <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
         <button class="wlt-btn wlt-btn--primary" (click)="downloadReceipt()">{{ labels().downloadReceipt }}</button>
       </div>
@@ -310,7 +310,7 @@
               [value]="depositNote()" (input)="depositNote.set($any($event.target).value)"></textarea>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--primary" (click)="submitDeposit()">
             {{ labels().depositConfirm }}
@@ -345,7 +345,7 @@
             </div>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--primary" (click)="confirmDeposit()" [disabled]="isProcessing()">
             @if (isProcessing()) { <span class="wlt-spinner"></span> {{ labels().processing }} }
@@ -363,7 +363,7 @@
           <p class="wlt-success-amount">+{{ parsedDepositAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</p>
           <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
         </div>
-        <div class="wlt-modal__footer wlt-modal__footer--center">
+        <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
             <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
             {{ labels().downloadReceipt }}
@@ -455,7 +455,7 @@
               [value]="withdrawNote()" (input)="withdrawNote.set($any($event.target).value)"></textarea>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--danger" (click)="submitWithdraw()">
             {{ labels().withdrawConfirm }}
@@ -497,7 +497,7 @@
             </div>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--danger" (click)="confirmWithdraw()" [disabled]="isProcessing()">
             @if (isProcessing()) { <span class="wlt-spinner wlt-spinner--white"></span> {{ labels().processing }} }
@@ -515,7 +515,7 @@
           <p class="wlt-success-amount wlt-success-amount--debit">-{{ parsedWithdrawAmount().toLocaleString('fr-FR') }}&nbsp;FCFA</p>
           <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
         </div>
-        <div class="wlt-modal__footer wlt-modal__footer--center">
+        <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
             <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
             {{ labels().downloadReceipt }}
@@ -617,7 +617,7 @@
               [value]="transferNote()" (input)="transferNote.set($any($event.target).value)"></textarea>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="closeModal()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--primary" style="background:#C9A84C; box-shadow:0 4px 14px rgba(201,168,76,.3)" (click)="submitTransfer()">
             {{ labels().transferConfirm }}
@@ -657,7 +657,7 @@
             </div>
           </div>
         </div>
-        <div class="wlt-modal__footer">
+        <div class="wlt-modal__footer" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="backToForm()" [disabled]="isProcessing()">{{ labels().cancel }}</button>
           <button class="wlt-btn wlt-btn--primary" style="background:#C9A84C; box-shadow:0 4px 14px rgba(201,168,76,.3)" (click)="confirmTransfer()" [disabled]="isProcessing()">
             @if (isProcessing()) { <span class="wlt-spinner"></span> {{ labels().processing }} }
@@ -676,7 +676,7 @@
           <p class="wlt-success-balance">{{ labels().transferTo }}: +237 {{ transferRecipient() }}</p>
           <p class="wlt-success-balance">{{ labels().totalBalance }}: {{ formattedBalance() }}</p>
         </div>
-        <div class="wlt-modal__footer wlt-modal__footer--center">
+        <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;">
           <button class="wlt-btn wlt-btn--ghost" (click)="downloadReceipt()">
             <lucide-icon name="download" [size]="16" color="#1B3A2D"></lucide-icon>
             {{ labels().downloadReceipt }}
@@ -748,9 +748,11 @@
         }
       </div>
 
-      <div class="wlt-modal__footer wlt-modal__footer--center">
+      <div class="wlt-modal__footer wlt-modal__footer--center" style="padding-bottom:120px;">
         <button class="wlt-btn wlt-btn--primary" (click)="closeModal()">{{ labels().close }}</button>
       </div>
     </div>
   </div>
 }
+
+

@@ -1,222 +1,185 @@
-<!-- ═══════════════════════════════════════════════════════
-     MEETING DETAIL PAGE · Djangi Management System
-     Component: MeetingDetailComponent · Standalone
-═══════════════════════════════════════════════════════ -->
-@if (meeting(); as m) {
-<div class="mdt-page">
+<div style="padding:20px;padding-bottom:120px;">
+  <button type="button" (click)="goBack()"
+    style="display:flex;align-items:center;gap:8px;background:none;border:none;font-size:14px;color:#1B3A2D;font-weight:600;cursor:pointer;margin-bottom:20px;">
+    <lucide-icon name="arrow-left" [size]="18"></lucide-icon>
+    {{ language() === 'fr' ? 'Retour' : 'Back' }}
+  </button>
 
-  <!-- ── HERO HEADER ── -->
-  <header class="mdt-hero" [style.--group-color]="m.groupColor">
-    <div class="mdt-hero__nav">
-      <button type="button" class="mdt-back-btn" (click)="goBack()">
-        <lucide-icon [img]="icons.ArrowLeft" [size]="18" aria-hidden="true"></lucide-icon>
-        {{ labels().back }}
-      </button>
-      <span class="mdt-hero__chip mdt-chip--{{ m.status }}">
+  @if (loading()) {
+    <p style="color:#6B7280;text-align:center;padding:40px;">
+      {{ language() === 'fr' ? 'Chargement...' : 'Loading...' }}
+    </p>
+  } @else if (meeting(); as m) {
+
+    <!-- HERO -->
+    <div style="background:#1B3A2D;border-radius:16px;padding:24px;color:#fff;margin-bottom:20px;">
+      <span style="font-size:12px;opacity:0.7;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;">
         {{ statusLabel(m.status) }}
       </span>
+      <h1 style="font-size:20px;font-weight:700;margin:12px 0 4px;">{{ m.title }}</h1>
+      <p style="font-size:13px;opacity:0.7;">
+        {{ formatDate(m.meetingDate ?? m.date ?? '') }} &middot; {{ formatTime(m.meetingDate ?? m.date ?? '') }}
+      </p>
     </div>
 
-    <p class="mdt-hero__group">{{ m.groupName }}</p>
-    <h1 class="mdt-hero__title">{{ title(m) }}</h1>
-
-    <div class="mdt-hero__meta">
-      <span class="mdt-hero__meta-item">
-        <lucide-icon [img]="icons.Calendar" [size]="14" aria-hidden="true"></lucide-icon>
-        {{ formatDate(m.date) }}
-      </span>
-      <span class="mdt-hero__meta-item">
-        <lucide-icon [img]="icons.Clock" [size]="14" aria-hidden="true"></lucide-icon>
-        {{ formatTime(m.date) }}
-      </span>
-      <span class="mdt-hero__meta-item">
-        @if (m.isVirtual) {
-          <lucide-icon [img]="icons.Video" [size]="14" aria-hidden="true"></lucide-icon>
-          {{ labels().virtual }}
-        } @else {
-          <lucide-icon [img]="icons.MapPin" [size]="14" aria-hidden="true"></lucide-icon>
-          {{ labels().inPerson }}
+    <!-- DETAILS -->
+    <div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <h2 style="font-size:15px;font-weight:700;color:#1B3A2D;margin-bottom:16px;">
+        {{ language() === 'fr' ? 'Informations' : 'Details' }}
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        @if (m.durationMinutes) {
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:#6B7280;">{{ language() === 'fr' ? 'Durée' : 'Duration' }}</span>
+            <span style="font-size:13px;font-weight:600;">{{ m.durationMinutes }} min</span>
+          </div>
         }
-      </span>
+        @if (m.attendeeCount) {
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:#6B7280;">{{ language() === 'fr' ? 'Participants' : 'Attendees' }}</span>
+            <span style="font-size:13px;font-weight:600;">{{ m.attendeeCount }}</span>
+          </div>
+        }
+        @if (m.mode) {
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:#6B7280;">{{ language() === 'fr' ? 'Mode' : 'Mode' }}</span>
+            <span style="font-size:13px;font-weight:600;">
+              {{ m.mode === 'online' ? (language() === 'fr' ? 'En ligne' : 'Online') : (language() === 'fr' ? 'Physique' : 'Physical') }}
+            </span>
+          </div>
+        }
+        @if (m.meetingLink) {
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;color:#6B7280;">{{ language() === 'fr' ? 'Lien' : 'Link' }}</span>
+            <a [href]="m.meetingLink" target="_blank"
+              style="display:inline-flex;align-items:center;gap:6px;background:#1B3A2D;color:#fff;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;text-decoration:none;">
+              <lucide-icon name="video" [size]="14"></lucide-icon>
+              {{ language() === 'fr' ? 'Rejoindre' : 'Join meeting' }}
+            </a>
+          </div>
+        }
+      </div>
     </div>
 
-    <!-- CTA for upcoming meetings -->
-    @if (m.status === 'upcoming' || m.status === 'ongoing') {
-      <div class="mdt-hero__actions">
-        @if (m.isVirtual) {
-          <button type="button" class="mdt-btn mdt-btn--join">
-            <lucide-icon [img]="icons.Video" [size]="15" aria-hidden="true"></lucide-icon>
-            {{ labels().joinMeeting }}
-          </button>
-        }
-        <button type="button" class="mdt-btn mdt-btn--ghost">
-          <lucide-icon [img]="icons.Edit" [size]="15" aria-hidden="true"></lucide-icon>
-          {{ labels().editMeeting }}
+    <!-- NOTES -->
+    @if (m.notes) {
+      <div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <h2 style="font-size:15px;font-weight:700;color:#1B3A2D;margin-bottom:12px;">
+          {{ language() === 'fr' ? 'Notes' : 'Notes' }}
+        </h2>
+        <p style="font-size:14px;color:#374151;line-height:1.6;margin:0;">{{ m.notes }}</p>
+      </div>
+    }
+
+    <!-- AI SUMMARY (already exists) -->
+    @if (m.aiSummary) {
+      <div style="background:linear-gradient(135deg,#1B3A2D,#2d5a42);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <lucide-icon name="sparkles" [size]="18"></lucide-icon>
+          <h2 style="font-size:15px;font-weight:700;margin:0;">
+            {{ language() === 'fr' ? 'Résumé IA' : 'AI Summary' }}
+          </h2>
+        </div>
+        <div style="font-size:14px;line-height:1.7;opacity:0.95;"
+          [innerHTML]="renderMarkdown(m.aiSummary ?? '')"></div>
+        <button type="button" (click)="showAudioUpload.set(true)" [disabled]="generatingSummary()"
+          style="margin-top:16px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+          <lucide-icon name="refresh-cw" [size]="14"></lucide-icon>
+          {{ language() === 'fr' ? 'Régénérer' : 'Regenerate' }}
         </button>
       </div>
     }
 
-    @if (m.hasAiSummary) {
-      <button type="button" class="mdt-ai-pill" (click)="downloadSummary()">
-        ✦ {{ labels().download }}
-      </button>
-    }
-  </header>
-
-  <!-- ── TABS ── -->
-  <nav class="mdt-tabs" role="tablist">
-    @for (tab of tabs(); track tab.value) {
-      <button
-        type="button"
-        role="tab"
-        class="mdt-tab"
-        [class.mdt-tab--active]="activeTab() === tab.value"
-        (click)="activeTab.set(tab.value)"
-      >
-        {{ tab.label }}
-      </button>
-    }
-  </nav>
-
-  <!-- ── TAB CONTENT ── -->
-  <main class="mdt-content">
-
-    <!-- INFO TAB -->
-    @if (activeTab() === 'info') {
-      <div class="mdt-section">
-        <div class="mdt-info-grid">
-          <div class="mdt-info-item">
-            <span class="mdt-info-label">{{ labels().date }}</span>
-            <span class="mdt-info-value">{{ formatDate(m.date) }}</span>
-          </div>
-          <div class="mdt-info-item">
-            <span class="mdt-info-label">{{ labels().time }}</span>
-            <span class="mdt-info-value">{{ formatTime(m.date) }}</span>
-          </div>
-          <div class="mdt-info-item">
-            <span class="mdt-info-label">{{ labels().duration }}</span>
-            <span class="mdt-info-value">{{ m.durationMin }} {{ labels().min }}</span>
-          </div>
-          <div class="mdt-info-item">
-            <span class="mdt-info-label">{{ labels().type }}</span>
-            <span class="mdt-info-value">
-              {{ m.isVirtual ? labels().virtual : labels().inPerson }}
-            </span>
-          </div>
-          <div class="mdt-info-item mdt-info-item--full">
-            <span class="mdt-info-label">{{ labels().location }}</span>
-            <span class="mdt-info-value">{{ location(m) }}</span>
-          </div>
-          <div class="mdt-info-item mdt-info-item--full">
-            <span class="mdt-info-label">{{ labels().group }}</span>
-            <span class="mdt-info-value">{{ m.groupName }}</span>
-          </div>
-        </div>
-
-        @if (m.status === 'completed') {
-          <div class="mdt-stat-row">
-            <div class="mdt-stat">
-              <span class="mdt-stat__value">{{ presentCount(m) }}/{{ m.totalMembers }}</span>
-              <span class="mdt-stat__label">{{ labels().presents }}</span>
-            </div>
-            <div class="mdt-stat">
-              <span class="mdt-stat__value">{{ m.durationMin }}{{ labels().min }}</span>
-              <span class="mdt-stat__label">{{ labels().duration }}</span>
-            </div>
-            <div class="mdt-stat">
-              <span class="mdt-stat__value">{{ m.agenda.length }}</span>
-              <span class="mdt-stat__label">{{ labels().agenda }}</span>
-            </div>
-          </div>
-        }
-      </div>
-    }
-
-    <!-- AGENDA TAB -->
-    @if (activeTab() === 'agenda') {
-      <div class="mdt-section">
-        <ul class="mdt-agenda-list">
-          @for (item of m.agenda; track item.id; let i = $index) {
-            <li class="mdt-agenda-item" [class.mdt-agenda-item--done]="item.done">
-              <div class="mdt-agenda-item__dot">
-                @if (item.done) {
-                  <lucide-icon [img]="icons.CheckCircle" [size]="18" aria-hidden="true"></lucide-icon>
-                } @else {
-                  <lucide-icon [img]="icons.Circle" [size]="18" aria-hidden="true"></lucide-icon>
-                }
-              </div>
-              <div class="mdt-agenda-item__body">
-                <span class="mdt-agenda-item__num">{{ i + 1 }}.</span>
-                <span class="mdt-agenda-item__title">{{ agendaTitle(item) }}</span>
-                <span class="mdt-agenda-item__dur">{{ item.duration }}{{ labels().min }}</span>
-              </div>
-            </li>
-          }
-        </ul>
-      </div>
-    }
-
-    <!-- ATTENDEES TAB -->
-    @if (activeTab() === 'attendees') {
-      <div class="mdt-section">
-        <p class="mdt-attendee-summary">
-          {{ presentCount(m) }} {{ labels().of }} {{ m.totalMembers }} {{ labels().presents }}
+    <!-- GENERATE SUMMARY (no summary yet) -->
+    @if (!m.aiSummary) {
+      <div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-align:center;">
+        <lucide-icon name="sparkles" [size]="32" style="color:#1B3A2D;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;"></lucide-icon>
+        <h2 style="font-size:15px;font-weight:700;color:#1B3A2D;margin-bottom:8px;">
+          {{ language() === 'fr' ? 'Résumé IA' : 'AI Summary' }}
+        </h2>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">
+          {{ language() === 'fr'
+            ? 'Uploadez l\'audio de la réunion pour générer un résumé intelligent.'
+            : 'Upload the meeting audio to generate an intelligent summary.' }}
         </p>
-        <ul class="mdt-attendee-list">
-          @for (a of m.attendees; track a.id) {
-            <li class="mdt-attendee-card">
-              <div class="mdt-avatar" [class.mdt-avatar--absent]="!a.present">
-                {{ a.avatar }}
-              </div>
-              <div class="mdt-attendee-info">
-                <span class="mdt-attendee-name">{{ a.name }}</span>
-                <span class="mdt-attendee-phone">{{ a.phone }}</span>
-              </div>
-              <div class="mdt-attendee-badges">
-                <span class="mdt-badge" [class.mdt-badge--green]="a.present" [class.mdt-badge--grey]="!a.present">
-                  {{ a.present ? labels().present : labels().absent }}
-                </span>
-                <span class="mdt-badge" [class.mdt-badge--green]="a.paid" [class.mdt-badge--red]="!a.paid">
-                  {{ a.paid ? labels().paid : labels().unpaid }}
-                </span>
-              </div>
-            </li>
-          }
-        </ul>
+        <button type="button" (click)="showAudioUpload.set(true)"
+          style="display:inline-flex;align-items:center;gap:8px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;">
+          <lucide-icon name="upload" [size]="16"></lucide-icon>
+          {{ language() === 'fr' ? 'Uploader l\'audio' : 'Upload Audio' }}
+        </button>
       </div>
     }
 
-    <!-- NOTES TAB -->
-    @if (activeTab() === 'notes') {
-      <div class="mdt-section">
-        @if (notes(m)) {
-          <div class="mdt-notes-body">{{ notes(m) }}</div>
-        } @else {
-          <p class="mdt-empty-text">{{ labels().noNotes }}</p>
-        }
-      </div>
-    }
-
-    <!-- AI SUMMARY TAB -->
-    @if (activeTab() === 'ai') {
-      <div class="mdt-section">
-        @if (aiSummary(m)) {
-          <div class="mdt-ai-card">
-            <div class="mdt-ai-card__header">
-              ✦ {{ labels().aiSummary }}
-            </div>
-            <div class="mdt-ai-card__body">{{ aiSummary(m) }}</div>
-            <button type="button" class="mdt-btn mdt-btn--dl" (click)="downloadSummary()">
-              <lucide-icon [img]="icons.Download" [size]="14" aria-hidden="true"></lucide-icon>
-              {{ labels().download }}
+    <!-- AUDIO UPLOAD MODAL -->
+    @if (showAudioUpload()) {
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:flex-end;">
+        <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 48px;width:100%;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="font-size:17px;font-weight:700;color:#1B3A2D;margin:0;">
+              {{ language() === 'fr' ? 'Uploader l\'audio' : 'Upload Audio' }}
+            </h3>
+            <button type="button" (click)="showAudioUpload.set(false)"
+              style="background:none;border:none;cursor:pointer;">
+              <lucide-icon name="x" [size]="20" style="color:#6B7280;"></lucide-icon>
             </button>
           </div>
-        } @else {
-          <p class="mdt-empty-text">{{ labels().noSummary }}</p>
-        }
+
+          <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">
+            {{ language() === 'fr'
+              ? 'Sélectionnez un fichier audio de la réunion (MP3, M4A, WAV). L\'IA va transcrire et résumer automatiquement.'
+              : 'Select an audio file of the meeting (MP3, M4A, WAV). AI will transcribe and summarize it automatically.' }}
+          </p>
+
+          <!-- File picker -->
+          <div style="border:2px dashed #E5E7EB;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;cursor:pointer;"
+            (click)="audioFileInput.click()">
+            <lucide-icon name="mic" [size]="28" style="color:#1B3A2D;display:block;margin:0 auto 8px;"></lucide-icon>
+            @if (selectedAudioFile()) {
+              <p style="font-size:14px;font-weight:600;color:#1B3A2D;margin:0;">{{ selectedAudioFile()!.name }}</p>
+              <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">{{ (selectedAudioFile()!.size / 1024 / 1024).toFixed(1) }} MB</p>
+            } @else {
+              <p style="font-size:14px;color:#6B7280;margin:0;">
+                {{ language() === 'fr' ? 'Appuyez pour sélectionner un fichier' : 'Tap to select a file' }}
+              </p>
+            }
+          </div>
+
+          <input #audioFileInput type="file" accept="audio/*" style="display:none;"
+            (change)="onAudioFileSelected($event)" />
+
+          @if (summaryError()) {
+            <p style="color:#DC2626;font-size:13px;font-weight:600;margin-bottom:12px;">{{ summaryError() }}</p>
+          }
+
+          <div style="display:flex;gap:10px;">
+            <button type="button" (click)="showAudioUpload.set(false)"
+              style="flex:1;padding:14px;background:#F3F4F6;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">
+              {{ language() === 'fr' ? 'Annuler' : 'Cancel' }}
+            </button>
+            <button type="button" (click)="uploadAndSummarize(m)"
+              [disabled]="!selectedAudioFile() || generatingSummary()"
+              style="flex:2;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"
+              [style.opacity]="!selectedAudioFile() || generatingSummary() ? '0.6' : '1'">
+              @if (generatingSummary()) {
+                <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <lucide-icon name="loader" [size]="16"></lucide-icon>
+                  {{ language() === 'fr' ? 'Traitement...' : 'Processing...' }}
+                </span>
+              } @else {
+                <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <lucide-icon name="sparkles" [size]="16"></lucide-icon>
+                  {{ language() === 'fr' ? 'Générer le résumé' : 'Generate Summary' }}
+                </span>
+              }
+            </button>
+          </div>
+        </div>
       </div>
     }
 
-  </main>
+  } @else {
+    <p style="color:#6B7280;text-align:center;padding:40px;">
+      {{ language() === 'fr' ? 'Réunion introuvable.' : 'Meeting not found.' }}
+    </p>
+  }
 </div>
-}

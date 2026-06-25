@@ -99,7 +99,7 @@
             (click)="$event.stopPropagation(); toggleUserDropdown()"
             [attr.aria-expanded]="showUserDropdown()"
           >
-            BK
+           {{ userInitials() }}.
           </button>
 
           @if (showUserDropdown()) {

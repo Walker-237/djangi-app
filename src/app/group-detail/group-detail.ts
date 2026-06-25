@@ -25,6 +25,8 @@ import { GroupsApiService } from '../core/services/groups.api.service';
 import { ContributionsService } from '../core/services/contributions.service';
 import { PayoutsService } from '../core/services/payouts.service';
 import { MeetingsService } from '../core/services/meetings.service';
+import { TokenService } from '../core/services/token.service';
+import { WalletService } from '../core/services/wallet.service';
 import { Contribution, Group, GroupMember, Meeting, Payout } from '../core/models/models';
 
 @Component({
@@ -67,10 +69,12 @@ export class GroupDetail {
   private readonly contributionsService = inject(ContributionsService);
   private readonly payoutsService = inject(PayoutsService);
   private readonly meetingsService = inject(MeetingsService);
+  private readonly tokenService = inject(TokenService);
+  private readonly walletService = inject(WalletService);
   private readonly destroyRef = inject(DestroyRef);
 
   language = this.languageService.language;
-  readonly isMember = signal(true);
+  readonly isMember = signal(false);
   loading = signal(false);
   error = signal<string | null>(null);
   group = signal<Group | undefined>(undefined);
@@ -78,15 +82,40 @@ export class GroupDetail {
   payouts = signal<Payout[]>([]);
   meetings = signal<Meeting[]>([]);
 
-  readonly myMember = computed<GroupMember | undefined>(() => this.group()?.members[0]);
-  readonly paidCount = computed(() => this.group()?.members.filter((m) => m.status === 'paid').length ?? 0);
+  readonly myMember = computed<GroupMember | undefined>(() => {
+    const currentUser = this.tokenService.getUser();
+    if (!currentUser) return undefined;
+    return this.group()?.members.find(m => m.userId === currentUser.id);
+  });
+
+  readonly paidCount = computed(() => {
+    const members = this.group()?.members ?? [];
+    const nextPos = members
+      .filter(m => m.status === 'next')
+      .sort((a, b) => a.position - b.position)[0]?.position ?? 1;
+    return nextPos - 1;
+  });
+
   readonly totalMembers = computed(() => this.group()?.memberCount ?? 0);
 
   readonly nextMember = computed<GroupMember | undefined>(() => {
     const group = this.group();
     if (!group) return undefined;
-    return group.members.find((m) => m.status === 'next') ?? group.members.find((m) => m.id === String(group.nextPayoutMemberId));
+    return group.members
+      .filter(m => m.status === 'next')
+      .sort((a, b) => a.position - b.position)[0];
   });
+
+  readonly isLeader = computed(() => {
+    const currentUser = this.tokenService.getUser();
+    const group = this.group();
+    if (!currentUser || !group) return false;
+    return group.leaderId === currentUser.id;
+  });
+
+  readonly pendingMembers = computed(() =>
+    this.group()?.members.filter(m => !m.approved) ?? []
+  );
 
   readonly cycleNumber = computed(() => {
     const group = this.group();
@@ -99,30 +128,56 @@ export class GroupDetail {
   private readonly circleRadius = 60;
   readonly circleCircumference = 2 * Math.PI * this.circleRadius;
 
+  // New signals for payment actions
+  payingContribution = signal(false);
+  payError = signal<string | null>(null);
+  showPayModal = signal(false);
+  processingPayout = signal(false);
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
+
     this.loading.set(true);
     this.error.set(null);
+
     this.groupsApiService.getById(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (group) => this.group.set(group),
       error: () => this.setLoadError(),
     });
+
     this.groupsApiService.getMembers(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (members) => {
         const group = this.group();
         if (group) this.group.set({ ...group, members });
+
+        const currentUser = this.tokenService.getUser();
+        if (currentUser) {
+          const isMember = members.some(m => m.userId === currentUser.id && m.status === 'next');
+          this.isMember.set(isMember);
+        }
       },
-      error: () => this.setLoadError(),
+      error: () => {
+        const group = this.group();
+        if (group) {
+          const currentUser = this.tokenService.getUser();
+          if (currentUser) {
+            this.isMember.set(group.members.some(m => m.userId === currentUser.id && m.status === 'next'));
+          }
+        }
+      },
     });
+
     this.contributionsService.getByGroup(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (contributions) => this.contributions.set(contributions),
       error: () => this.setLoadError(),
     });
+
     this.payoutsService.getByGroup(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (payouts) => this.payouts.set(payouts),
       error: () => this.setLoadError(),
     });
+
     this.meetingsService.getByGroup(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (meetings) => {
         this.meetings.set(meetings);
@@ -135,6 +190,100 @@ export class GroupDetail {
   cycleDashOffset(): number {
     const progress = this.totalMembers() === 0 ? 0 : this.paidCount() / this.totalMembers();
     return this.circleCircumference * (1 - progress);
+  }
+
+  approveMember(memberId: string): void {
+    const group = this.group();
+    if (!group) return;
+    this.groupsApiService.approveMember(group.id, memberId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.groupsApiService.getMembers(group.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (members) => {
+                this.group.update(g => g ? { ...g, members } : g);
+              }
+            });
+        },
+        error: () => this.setLoadError(),
+      });
+  }
+
+  rejectMember(memberId: string): void {
+    const group = this.group();
+    if (!group) return;
+    this.groupsApiService.rejectMember(group.id, memberId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.group.update(g => g ? {
+            ...g,
+            members: g.members.filter(m => m.id !== memberId)
+          } : g);
+        },
+        error: () => this.setLoadError(),
+      });
+  }
+
+  openPayModal(): void {
+    this.showPayModal.set(true);
+    this.payError.set(null);
+  }
+
+  closePayModal(): void {
+    this.showPayModal.set(false);
+  }
+
+  payContribution(): void {
+    const group = this.group();
+    const contrib = this.contributions().find(c => c.status === 'pending');
+    if (!group || !contrib) {
+      this.payError.set(this.language() === 'fr' ? 'Aucune cotisation en attente.' : 'No pending contribution.');
+      return;
+    }
+    this.payingContribution.set(true);
+    this.payError.set(null);
+    this.walletService.payContribution(group.id, contrib.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.payingContribution.set(false);
+          this.showPayModal.set(false);
+          this.contributionsService.getByGroup(group.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (c) => this.contributions.set(c) });
+          this.groupsApiService.getById(group.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (g) => this.group.set(g) });
+        },
+        error: () => {
+          this.payError.set(this.language() === 'fr' ? 'Solde insuffisant ou erreur.' : 'Insufficient balance or error.');
+          this.payingContribution.set(false);
+        },
+      });
+  }
+
+  triggerPayout(): void {
+    const group = this.group();
+    const payout = this.payouts().find(p => p.status === 'scheduled');
+    if (!group || !payout) return;
+    this.processingPayout.set(true);
+    this.walletService.processPayout(group.id, payout.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.processingPayout.set(false);
+          this.payoutsService.getByGroup(group.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (p) => this.payouts.set(p) });
+          this.groupsApiService.getById(group.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (g) => this.group.set(g) });
+        },
+        error: () => this.processingPayout.set(false),
+      });
   }
 
   formatAmount(n: number): string {
@@ -163,7 +312,7 @@ export class GroupDetail {
 
   statusLabel(status: GroupMember['status']): string {
     const map: Record<GroupMember['status'], { en: string; fr: string }> = {
-      paid: { en: 'Paid', fr: 'Paye' },
+      paid: { en: 'Paid', fr: 'Payé' },
       next: { en: 'Next', fr: 'Prochain' },
       pending: { en: 'Pending', fr: 'En attente' },
       late: { en: 'Late', fr: 'En retard' },
@@ -174,10 +323,10 @@ export class GroupDetail {
 
   meetingStatusLabel(status: string): string {
     const map: Record<string, { en: string; fr: string }> = {
-      upcoming: { en: 'Upcoming', fr: 'A venir' },
-      completed: { en: 'Completed', fr: 'Termine' },
+      upcoming: { en: 'Upcoming', fr: 'À venir' },
+      completed: { en: 'Completed', fr: 'Terminé' },
       pending: { en: 'Pending', fr: 'En attente' },
-      cancelled: { en: 'Cancelled', fr: 'Annule' },
+      cancelled: { en: 'Cancelled', fr: 'Annulé' },
     };
     const entry = map[status] ?? { en: status, fr: status };
     return this.language() === 'fr' ? entry.fr : entry.en;
@@ -232,7 +381,11 @@ export class GroupDetail {
     this.groupsApiService.join(group.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (updatedGroup) => {
         this.group.set(updatedGroup);
-        this.isMember.set(true);
+        const currentUser = this.tokenService.getUser();
+        if (currentUser) {
+          const isMember = updatedGroup.members.some(m => m.userId === currentUser.id && m.status === 'next');
+          this.isMember.set(isMember);
+        }
         this.loading.set(false);
       },
       error: () => this.setLoadError(),
@@ -244,4 +397,3 @@ export class GroupDetail {
     this.loading.set(false);
   }
 }
-

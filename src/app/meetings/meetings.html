@@ -1,107 +1,323 @@
-<!-- ═══════════════════════════════════════════════════════
-     MEETINGS PAGE · Djangi Management System
-     Component: MeetingsComponent · Standalone
-═══════════════════════════════════════════════════════ -->
-<div class="mtg-page">
+﻿<div class="mtg-page">
 
-  <!-- ── HEADER ── -->
   <header class="mtg-header">
     <div class="mtg-header__inner">
-      <h1 class="mtg-header__title">{{ labels().pageTitle }}</h1>
-      <button type="button" class="mtg-btn-new">
-        <lucide-icon [img]="icons.Plus" [size]="16" aria-hidden="true"></lucide-icon>
-        {{ labels().newMeeting }}
-      </button>
+      <h1 class="mtg-header__title">{{ language() === 'fr' ? 'Réunions' : 'Meetings' }}</h1>
+      @if (myGroups().length > 0) {
+        <button type="button" class="mtg-btn-new" (click)="openCreate()">
+          <lucide-icon name="plus" [size]="16"></lucide-icon>
+          {{ language() === 'fr' ? 'Planifier' : 'Schedule' }}
+        </button>
+      }
     </div>
-
-    <!-- Filter tabs -->
     <div class="mtg-filters" role="tablist">
-      @for (f of filters(); track f.value) {
-        <button
-          type="button"
-          role="tab"
-          class="mtg-filter-tab"
-          [class.mtg-filter-tab--active]="activeFilter() === f.value"
-          (click)="activeFilter.set(f.value)"
-        >
-          {{ f.label }}
+      @for (f of [['all','Toutes','All'],['upcoming','À venir','Upcoming'],['completed','Terminées','Completed']]; track f[0]) {
+        <button type="button" role="tab" class="mtg-filter-tab"
+          [class.mtg-filter-tab--active]="activeFilter() === f[0]"
+          (click)="activeFilter.set($any(f[0]))">
+          {{ language() === 'fr' ? f[1] : f[2] }}
         </button>
       }
     </div>
   </header>
 
-  <!-- ── MEETING LIST ── -->
-  <main class="mtg-list">
-    @if (meetings().length === 0) {
-      <!-- Empty state -->
+  <main class="mtg-list" style="padding-bottom:100px;">
+    @if (loading()) {
+      <div style="text-align:center;padding:40px;color:#6B7280;">{{ language() === 'fr' ? 'Chargement...' : 'Loading...' }}</div>
+    } @else if (filteredMeetings().length === 0) {
       <div class="mtg-empty">
-        <div class="mtg-empty__icon">
-          <lucide-icon [img]="icons.Calendar" [size]="32" aria-hidden="true"></lucide-icon>
-        </div>
-        <p class="mtg-empty__title">{{ labels().noMeetings }}</p>
-        <p class="mtg-empty__desc">{{ labels().noMeetingsDesc }}</p>
+        <div class="mtg-empty__icon"><lucide-icon name="calendar" [size]="32"></lucide-icon></div>
+        <p class="mtg-empty__title">{{ language() === 'fr' ? 'Aucune réunion' : 'No meetings' }}</p>
+        <p class="mtg-empty__desc">{{ language() === 'fr' ? 'Aucune réunion pour ce filtre.' : 'No meetings for this filter.' }}</p>
       </div>
     } @else {
-      @for (m of meetings(); track m.id) {
-        <button type="button" class="mtg-card" (click)="openDetail(m.id)">
-
-          <!-- Group color bar -->
-          <span class="mtg-card__bar" [style.background]="m.groupColor"></span>
-
-          <!-- Card body -->
-          <div class="mtg-card__body">
-
-            <!-- Top row: group name + status chip -->
-            <div class="mtg-card__top">
-              <span class="mtg-card__group">{{ m.groupName }}</span>
-              <span class="mtg-chip mtg-chip--{{ m.status }}">
-                {{ statusLabel(m.status) }}
+      @for (m of filteredMeetings(); track m.id) {
+        <div class="mtg-card" style="margin-bottom:16px;border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow:hidden;">
+          <div class="mtg-card__body" style="padding:16px;">
+            <div class="mtg-card__top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span class="mtg-card__group" style="font-size:12px;color:#6B7280;font-weight:600;">{{ m.groupName }}</span>
+              <span class="mtg-chip mtg-chip--{{ m.status }}" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#F0FDF4;color:#166534;">{{ statusLabel(m.status) }}</span>
+            </div>
+            <p class="mtg-card__title" style="font-size:16px;font-weight:700;color:#1B3A2D;margin-bottom:10px;">{{ m.title }}</p>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-size:13px;color:#6B7280;display:flex;align-items:center;gap:6px;">
+                <lucide-icon name="calendar" [size]="13"></lucide-icon>
+                {{ formatDate(m.meetingDate ?? m.date ?? '') }}
+              </span>
+              <span style="font-size:13px;color:#6B7280;display:flex;align-items:center;gap:6px;">
+                <lucide-icon name="clock" [size]="13"></lucide-icon>
+                {{ formatTime(m.meetingDate ?? m.date ?? '') }}
+                @if (m.durationMinutes) { · {{ m.durationMinutes }}min }
               </span>
             </div>
+            @if (m.notes) {
+              <p style="font-size:13px;color:#6B7280;margin-top:8px;">{{ m.notes }}</p>
+            }
 
-            <!-- Title -->
-            <p class="mtg-card__title">{{ title(m) }}</p>
-
-            <!-- Meta row -->
-            <div class="mtg-card__meta">
-              <span class="mtg-meta-item">
-                <lucide-icon [img]="icons.Calendar" [size]="13" aria-hidden="true"></lucide-icon>
-                {{ formatDate(m.date) }}
-              </span>
-              <span class="mtg-meta-item">
-                <lucide-icon [img]="icons.Clock" [size]="13" aria-hidden="true"></lucide-icon>
-                {{ formatTime(m.date) }} · {{ m.durationMin }}{{ labels().min }}
-              </span>
-              <span class="mtg-meta-item">
-                @if (m.isVirtual) {
-                  <lucide-icon [img]="icons.Video" [size]="13" aria-hidden="true"></lucide-icon>
-                } @else {
-                  <lucide-icon [img]="icons.MapPin" [size]="13" aria-hidden="true"></lucide-icon>
-                }
-                {{ location(m) }}
-              </span>
-              @if (m.status === 'completed' || m.status === 'ongoing') {
-                <span class="mtg-meta-item">
-                  <lucide-icon [img]="icons.Users" [size]="13" aria-hidden="true"></lucide-icon>
-                  {{ m.attendeeCount }}/{{ m.totalMembers }} {{ labels().attendees }}
-                </span>
-              }
-            </div>
-
-            <!-- AI summary badge -->
-            @if (m.hasAiSummary) {
-              <div class="mtg-ai-badge">
-                ✦ {{ labels().aiSummary }}
-              </div>
+            <!-- Join button for online meetings -->
+            @if (m.mode === 'online' && m.meetingLink) {
+              <a [href]="m.meetingLink" target="_blank"
+                style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#1B3A2D;font-weight:700;margin-top:8px;text-decoration:none;background:#F0FDF4;padding:6px 12px;border-radius:8px;border:1px solid #BBF7D0;">
+                <lucide-icon name="video" [size]="12"></lucide-icon>
+                {{ language() === 'fr' ? 'Rejoindre la réunion' : 'Join meeting' }}
+              </a>
             }
           </div>
 
-          <!-- Chevron -->
-          <lucide-icon [img]="icons.ChevronRight" [size]="18" class="mtg-card__chevron" aria-hidden="true"></lucide-icon>
+          <!-- Generate Report button for completed meetings -->
+          @if (isLeaderOf().has(m.groupId) && m.status === 'completed') {
+            <div style="padding:0 16px 16px;">
+              @if (m.hasAiSummary) {
+                <button type="button"
+                  style="width:100%;padding:10px;background:#F0FDF4;color:#166534;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
+                  (click)="openSummaryView(m)">
+                  <lucide-icon name="sparkles" [size]="14"></lucide-icon>
+                  {{ language() === 'fr' ? 'Voir le résumé' : 'View summary' }}
+                </button>
+              } @else {
+                <button type="button"
+                  style="width:100%;padding:10px;background:#F0F4F2;color:#1B3A2D;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
+                  (click)="openSummaryModal(m)">
+                  <lucide-icon name="file-text" [size]="14"></lucide-icon>
+                  {{ language() === 'fr' ? 'Générer un rapport' : 'Generate report' }}
+                </button>
+              }
+            </div>
+          }
 
-        </button>
+          @if (isLeaderOf().has(m.groupId) && m.status === 'upcoming') {
+            <div style="padding:0 16px 16px;">
+              <button type="button"
+                style="width:100%;padding:10px;background:#1B3A2D;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;"
+                (click)="openComplete(m)">
+                {{ language() === 'fr' ? 'Marquer comme terminée' : 'Mark as completed' }}
+              </button>
+            </div>
+          }
+        </div>
       }
     }
   </main>
 
 </div>
+
+<!-- CREATE MODAL -->
+@if (showCreateModal()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;" (click)="showCreateModal.set(false)">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;padding-bottom:140px;" (click)="$event.stopPropagation()">
+      <h2 style="font-size:18px;font-weight:700;color:#1B3A2D;margin-bottom:16px;">{{ language() === 'fr' ? 'Planifier une réunion' : 'Schedule a meeting' }}</h2>
+
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">{{ language() === 'fr' ? 'Groupe' : 'Group' }}</label>
+      <select [(ngModel)]="selectedGroupId" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px;font-size:14px;">
+        @for (g of myGroups(); track g.id) {
+          @if (isLeaderOf().has(g.id)) {
+            <option [value]="g.id">{{ g.name }}</option>
+          }
+        }
+      </select>
+
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">{{ language() === 'fr' ? 'Titre' : 'Title' }}</label>
+      <input [(ngModel)]="newTitle" type="text" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px;font-size:14px;" [placeholder]="language() === 'fr' ? 'ex. Réunion mensuelle' : 'e.g. Monthly meeting'" />
+
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">{{ language() === 'fr' ? 'Date et heure' : 'Date & time' }}</label>
+      <input [(ngModel)]="newDate" type="datetime-local" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px;font-size:14px;" />
+
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">{{ language() === 'fr' ? 'Durée (min)' : 'Duration (min)' }}</label>
+      <input [(ngModel)]="newDuration" type="number" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px;font-size:14px;" placeholder="60" />
+
+      <!-- New Meeting Type Selector -->
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">
+        {{ language() === 'fr' ? 'Type de réunion' : 'Meeting type' }}
+      </label>
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <button type="button"
+          [style.background]="newMode() === 'physical' ? '#1B3A2D' : '#F3F4F6'"
+          [style.color]="newMode() === 'physical' ? '#fff' : '#374151'"
+          style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;"
+          (click)="newMode.set('physical')">
+          🏢 {{ language() === 'fr' ? 'Présentiel' : 'Physical' }}
+        </button>
+        <button type="button"
+          [style.background]="newMode() === 'online' ? '#1B3A2D' : '#F3F4F6'"
+          [style.color]="newMode() === 'online' ? '#fff' : '#374151'"
+          style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;"
+          (click)="newMode.set('online')">
+          💻 {{ language() === 'fr' ? 'En ligne' : 'Online' }}
+        </button>
+      </div>
+
+      @if (newMode() === 'online') {
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Platform</label>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <button type="button"
+            [style.background]="newLink().includes('jit.si') ? '#1B3A2D' : '#F3F4F6'"
+            [style.color]="newLink().includes('jit.si') ? '#fff' : '#374151'"
+            style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;"
+            (click)="newLink.set('https://meet.jit.si/djangi-' + selectedGroupId().slice(0,8))">
+            Jitsi Meet
+          </button>
+          <button type="button"
+            [style.background]="newLink().includes('element') ? '#1B3A2D' : '#F3F4F6'"
+            [style.color]="newLink().includes('element') ? '#fff' : '#374151'"
+            style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;"
+            (click)="newLink.set('https://app.element.io/#/room/#djangi-' + selectedGroupId().slice(0,8) + ':matrix.org')">
+            Element
+          </button>
+        </div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">
+          {{ language() === 'fr' ? 'Lien généré' : 'Generated link' }}
+        </label>
+        <input [(ngModel)]="newLink" type="url"
+          style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px;font-size:13px;"
+          placeholder="https://..." />
+      }
+
+      @if (createError()) {
+        <p style="color:#DC2626;font-size:13px;margin-bottom:8px;">{{ createError() }}</p>
+      }
+
+      <button type="button" (click)="submitCreate()" [disabled]="creating()"
+        style="width:100%;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+        {{ creating() ? '...' : (language() === 'fr' ? 'Créer la réunion' : 'Create meeting') }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- COMPLETE MODAL -->
+@if (showCompleteModal()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;" (click)="showCompleteModal.set(false)">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;padding-bottom:140px;" (click)="$event.stopPropagation()">
+      <h2 style="font-size:18px;font-weight:700;color:#1B3A2D;margin-bottom:8px;">{{ language() === 'fr' ? 'Terminer la réunion' : 'Complete meeting' }}</h2>
+      <p style="font-size:14px;color:#6B7280;margin-bottom:16px;">{{ completingMeeting()?.title }}</p>
+
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">{{ language() === 'fr' ? 'Notes (optionnel)' : 'Notes (optional)' }}</label>
+      <textarea [(ngModel)]="completeNotes" rows="4"
+        style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:16px;font-size:14px;resize:none;"
+        [placeholder]="language() === 'fr' ? 'Points discutés, décisions prises...' : 'Key points, decisions made...'"></textarea>
+
+      <button type="button" (click)="submitComplete()" [disabled]="completing()"
+        style="width:100%;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+        {{ completing() ? '...' : (language() === 'fr' ? 'Confirmer' : 'Confirm') }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- SUMMARY MODAL -->
+@if (showSummaryModal()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:flex-end;">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(110px + env(safe-area-inset-bottom));width:100%;max-height:85vh;overflow-y:auto;" (click)="$event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:17px;font-weight:700;color:#1B3A2D;margin:0;">
+          {{ language() === 'fr' ? 'Générer un rapport' : 'Generate report' }}
+        </h3>
+        <button type="button" (click)="showSummaryModal.set(false)" style="background:none;border:none;cursor:pointer;">
+          <lucide-icon name="x" [size]="20" style="color:#6B7280;"></lucide-icon>
+        </button>
+      </div>
+
+      @if (!summaryMode()) {
+        <p style="font-size:13px;color:#6B7280;margin-bottom:20px;">
+          {{ language() === 'fr' ? 'Comment souhaitez-vous générer le résumé ?' : 'How would you like to generate the summary?' }}
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <button type="button" (click)="summaryMode.set('manual')"
+            style="padding:16px;background:#F7F3ED;border:none;border-radius:12px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;background:#1B3A2D;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <lucide-icon name="file-text" [size]="20" style="color:#fff;"></lucide-icon>
+            </div>
+            <div>
+              <p style="font-size:14px;font-weight:700;color:#1B3A2D;margin:0 0 2px;">{{ language() === 'fr' ? 'Saisie manuelle' : 'Manual entry' }}</p>
+              <p style="font-size:12px;color:#6B7280;margin:0;">{{ language() === 'fr' ? 'Rédigez le résumé vous-même' : 'Write the summary yourself' }}</p>
+            </div>
+          </button>
+          <button type="button" (click)="summaryMode.set('ai')"
+            style="padding:16px;background:#F7F3ED;border:none;border-radius:12px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;background:linear-gradient(135deg,#1B3A2D,#4A7C59);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <lucide-icon name="sparkles" [size]="20" style="color:#fff;"></lucide-icon>
+            </div>
+            <div>
+              <p style="font-size:14px;font-weight:700;color:#1B3A2D;margin:0 0 2px;">{{ language() === 'fr' ? 'Résumé IA' : 'AI Summary' }}</p>
+              <p style="font-size:12px;color:#6B7280;margin:0;">{{ language() === 'fr' ? 'Uploadez l\'audio, l\'IA fait le reste' : 'Upload audio, AI does the rest' }}</p>
+            </div>
+          </button>
+        </div>
+      }
+
+      @if (summaryMode() === 'manual') {
+        <button type="button" (click)="summaryMode.set(null)" style="background:none;border:none;color:#1B3A2D;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0;">
+          ← {{ language() === 'fr' ? 'Retour' : 'Back' }}
+        </button>
+        <textarea [(ngModel)]="manualSummary" rows="6"
+          style="width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:12px;font-size:14px;resize:none;margin-bottom:16px;"
+          [placeholder]="language() === 'fr' ? 'Résumé de la réunion...' : 'Meeting summary...'"></textarea>
+        @if (summaryError()) {
+          <p style="color:#DC2626;font-size:13px;font-weight:600;margin-bottom:12px;">{{ summaryError() }}</p>
+        }
+        <button type="button" (click)="submitManualSummary()" [disabled]="generatingSummary() || !manualSummary().trim()"
+          style="width:100%;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
+          {{ generatingSummary() ? '...' : (language() === 'fr' ? 'Enregistrer' : 'Save') }}
+        </button>
+      }
+
+      @if (summaryMode() === 'ai') {
+        <button type="button" (click)="summaryMode.set(null)" style="background:none;border:none;color:#1B3A2D;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0;">
+          ← {{ language() === 'fr' ? 'Retour' : 'Back' }}
+        </button>
+        <div style="border:2px dashed #E5E7EB;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;cursor:pointer;"
+          (click)="audioFileInput.click()">
+          <lucide-icon name="mic" [size]="28" style="color:#1B3A2D;display:block;margin:0 auto 8px;"></lucide-icon>
+          @if (selectedAudioFile()) {
+            <p style="font-size:14px;font-weight:600;color:#1B3A2D;margin:0;">{{ selectedAudioFile()!.name }}</p>
+            <p style="font-size:12px;color:#6B7280;margin:4px 0 0;">{{ (selectedAudioFile()!.size / 1024 / 1024).toFixed(1) }} MB</p>
+          } @else {
+            <p style="font-size:14px;color:#6B7280;margin:0;">{{ language() === 'fr' ? 'Appuyez pour sélectionner un fichier audio' : 'Tap to select an audio file' }}</p>
+            <p style="font-size:12px;color:#9CA3AF;margin:4px 0 0;">MP3, M4A, WAV</p>
+          }
+        </div>
+        <input #audioFileInput type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.mp4,.webm" style="display:none;" (change)="onAudioFileSelected($event)" />
+        @if (summaryError()) {
+          <p style="color:#DC2626;font-size:13px;font-weight:600;margin-bottom:12px;">{{ summaryError() }}</p>
+        }
+        <button type="button" (click)="submitAudioSummary()" [disabled]="!selectedAudioFile() || generatingSummary()"
+          style="width:100%;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"
+          [style.opacity]="!selectedAudioFile() || generatingSummary() ? '0.6' : '1'">
+          {{ generatingSummary() 
+            ? (language() === 'fr' ? 'Traitement en cours...' : 'Processing...') 
+            : (language() === 'fr' ? 'Générer le résumé IA' : 'Generate AI Summary') }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- SUMMARY VIEW MODAL -->
+@if (showSummaryView()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:flex-end;padding-bottom:calc(80px + env(safe-area-inset-bottom));">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-height:75vh;overflow-y:auto;" (click)="$event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <lucide-icon name="sparkles" [size]="18" style="color:#1B3A2D;"></lucide-icon>
+          <h3 style="font-size:17px;font-weight:700;color:#1B3A2D;margin:0;">
+            {{ language() === 'fr' ? 'Résumé IA' : 'AI Summary' }}
+          </h3>
+        </div>
+        <button type="button" (click)="showSummaryView.set(false)" style="background:none;border:none;cursor:pointer;">
+          <lucide-icon name="x" [size]="20" style="color:#6B7280;"></lucide-icon>
+        </button>
+      </div>
+      <p style="font-size:13px;color:#6B7280;margin-bottom:16px;font-weight:600;">{{ viewingSummary()?.title }}</p>
+      <div style="font-size:14px;color:#374151;line-height:1.7;"
+        [innerHTML]="renderMarkdown(viewingSummary()?.aiSummary ?? '')"></div>
+      @if (isLeaderOf().has(viewingSummary()?.groupId ?? '')) {
+        <button type="button"
+          style="margin-top:20px;width:100%;padding:12px;background:#F0F4F2;color:#1B3A2D;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
+          (click)="showSummaryView.set(false); openSummaryModal(viewingSummary()!)">
+          <lucide-icon name="refresh-cw" [size]="14"></lucide-icon>
+          {{ language() === 'fr' ? 'Régénérer' : 'Regenerate' }}
+        </button>
+      }
+    </div>
+  </div>
+}

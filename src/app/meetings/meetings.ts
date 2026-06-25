@@ -1,223 +1,265 @@
-import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, signal, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { inject } from '@angular/core';
-import {
-  LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
-  Calendar, Clock, MapPin, Users, Video, Plus,
-  ChevronRight, Filter, CheckCircle, Circle, AlertCircle, X,
-} from 'lucide-angular';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, Video, Calendar, Sparkles, Upload, Mic, FileText, Clock, Plus, ChevronRight, CheckCircle, Circle, X, Users } from 'lucide-angular';
+import { marked } from 'marked';
+import { MeetingsService } from '../core/services/meetings.service';
+import { GroupsApiService } from '../core/services/groups.api.service';
+import { LanguageService } from '../core/services/language.service';
+import { TokenService } from '../core/services/token.service';
+import { Meeting, Group } from '../core/models/models';
 
-const ICONS = {
-  Calendar, Clock, MapPin, Users, Video, Plus,
-  ChevronRight, Filter, CheckCircle, Circle, AlertCircle, X,
-};
-
-type Lang = 'fr' | 'en';
-export type MeetingStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-export type MeetingFilter = 'all' | 'upcoming' | 'completed';
-
-export interface Meeting {
-  id:            string;
-  groupId:       string;
-  groupName:     string;
-  groupColor:    string;
-  titleFr:       string;
-  titleEn:       string;
-  date:          Date;
-  durationMin:   number;
-  locationFr:    string;
-  locationEn:    string;
-  isVirtual:     boolean;
-  status:        MeetingStatus;
-  attendeeCount: number;
-  totalMembers:  number;
-  hasAiSummary:  boolean;
+interface MeetingWithGroup extends Meeting { 
+  groupName: string; 
+  groupId: string; 
 }
 
-const LABELS = {
-  fr: {
-    pageTitle:       'Réunions',
-    newMeeting:      'Planifier',
-    filterAll:       'Toutes',
-    filterUpcoming:  'À venir',
-    filterCompleted: 'Terminées',
-    upcoming:        'À venir',
-    ongoing:         'En cours',
-    completed:       'Terminée',
-    cancelled:       'Annulée',
-    virtual:         'Virtuelle',
-    inPerson:        'Présentiel',
-    attendees:       'participants',
-    aiSummary:       'Résumé IA disponible',
-    noMeetings:      'Aucune réunion',
-    noMeetingsDesc:  'Aucune réunion pour ce filtre.',
-    today:           "Aujourd'hui",
-    tomorrow:        'Demain',
-    yesterday:       'Hier',
-    min:             'min',
-    scheduleNew:     'Planifier une réunion',
-  },
-  en: {
-    pageTitle:       'Meetings',
-    newMeeting:      'Schedule',
-    filterAll:       'All',
-    filterUpcoming:  'Upcoming',
-    filterCompleted: 'Completed',
-    upcoming:        'Upcoming',
-    ongoing:         'Ongoing',
-    completed:       'Completed',
-    cancelled:       'Cancelled',
-    virtual:         'Virtual',
-    inPerson:        'In person',
-    attendees:       'attendees',
-    aiSummary:       'AI summary available',
-    noMeetings:      'No meetings',
-    noMeetingsDesc:  'No meetings for this filter.',
-    today:           'Today',
-    tomorrow:        'Tomorrow',
-    yesterday:       'Yesterday',
-    min:             'min',
-    scheduleNew:     'Schedule a meeting',
-  },
-} as const;
-
-const now = Date.now();
-
-const MOCK_MEETINGS: Meeting[] = [
-  {
-    id: 'm1', groupId: 'g1', groupName: 'Tontine Famille', groupColor: '#1B3A2D',
-    titleFr: 'Réunion mensuelle — Juillet', titleEn: 'Monthly Meeting — July',
-    date: new Date(now + 3_600_000 * 3), durationMin: 90,
-    locationFr: 'Google Meet', locationEn: 'Google Meet',
-    isVirtual: true, status: 'upcoming',
-    attendeeCount: 3, totalMembers: 5, hasAiSummary: false,
-  },
-  {
-    id: 'm2', groupId: 'g2', groupName: 'Cercle Amis BTP', groupColor: '#4A7C59',
-    titleFr: "Réunion d'urgence", titleEn: 'Emergency Meeting',
-    date: new Date(now + 86_400_000 * 2), durationMin: 60,
-    locationFr: 'Salle de conférence Akwa', locationEn: 'Akwa Conference Room',
-    isVirtual: false, status: 'upcoming',
-    attendeeCount: 0, totalMembers: 6, hasAiSummary: false,
-  },
-  {
-    id: 'm3', groupId: 'g3', groupName: 'Njangi Pro', groupColor: '#C0392B',
-    titleFr: 'Réunion planification T3', titleEn: 'Q3 Planning Meeting',
-    date: new Date(now + 86_400_000 * 7), durationMin: 120,
-    locationFr: 'WhatsApp Call', locationEn: 'WhatsApp Call',
-    isVirtual: true, status: 'upcoming',
-    attendeeCount: 0, totalMembers: 5, hasAiSummary: false,
-  },
-  {
-    id: 'm4', groupId: 'g1', groupName: 'Tontine Famille', groupColor: '#1B3A2D',
-    titleFr: 'Réunion mensuelle — Juin', titleEn: 'Monthly Meeting — June',
-    date: new Date(now - 86_400_000 * 5), durationMin: 90,
-    locationFr: 'Google Meet', locationEn: 'Google Meet',
-    isVirtual: true, status: 'completed',
-    attendeeCount: 4, totalMembers: 5, hasAiSummary: true,
-  },
-  {
-    id: 'm5', groupId: 'g2', groupName: 'Cercle Amis BTP', groupColor: '#4A7C59',
-    titleFr: 'Réunion mensuelle — Juin', titleEn: 'Monthly Meeting — June',
-    date: new Date(now - 86_400_000 * 12), durationMin: 75,
-    locationFr: 'Résidence Mbarga', locationEn: 'Mbarga Residence',
-    isVirtual: false, status: 'completed',
-    attendeeCount: 6, totalMembers: 6, hasAiSummary: true,
-  },
-  {
-    id: 'm6', groupId: 'g4', groupName: 'Épargne Quartier', groupColor: '#2980B9',
-    titleFr: 'Réunion annuelle', titleEn: 'Annual Meeting',
-    date: new Date(now - 86_400_000 * 20), durationMin: 180,
-    locationFr: 'Salle paroissiale', locationEn: 'Parish Hall',
-    isVirtual: false, status: 'completed',
-    attendeeCount: 9, totalMembers: 10, hasAiSummary: false,
-  },
-  {
-    id: 'm7', groupId: 'g3', groupName: 'Njangi Pro', groupColor: '#C0392B',
-    titleFr: 'Réunion annulée', titleEn: 'Cancelled Meeting',
-    date: new Date(now - 86_400_000 * 3), durationMin: 60,
-    locationFr: 'Zoom', locationEn: 'Zoom',
-    isVirtual: true, status: 'cancelled',
-    attendeeCount: 0, totalMembers: 5, hasAiSummary: false,
-  },
-];
+type MeetingFilter = 'all' | 'upcoming' | 'completed';
 
 @Component({
   selector: 'app-meetings',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
-  providers: [
-    { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(ICONS) },
-  ],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ Calendar, Sparkles, Video, Upload, Mic, FileText, Clock, Plus, ChevronRight, CheckCircle, Circle, X, Users }) }],
   templateUrl: './meetings.html',
   styleUrls: ['./meetings.css'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class MeetingsComponent {
-  private router = inject(Router);
+  private readonly router = inject(Router);
+  private readonly meetingsService = inject(MeetingsService);
+  private readonly groupsApiService = inject(GroupsApiService);
+  private readonly languageService = inject(LanguageService);
+  private readonly tokenService = inject(TokenService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  language     = signal<Lang>('fr');
+  language = this.languageService.language;
   activeFilter = signal<MeetingFilter>('all');
-  icons        = ICONS;
+  loading = signal(false);
+  error = signal<string | null>(null);
+  allMeetings = signal<MeetingWithGroup[]>([]);
+  myGroups = signal<Group[]>([]);
 
-  labels = computed(() => LABELS[this.language()]);
+  showCreateModal = signal(false);
+  selectedGroupId = signal('');
+  newTitle = signal('');
+  newDate = signal('');
+  newDuration = signal('60');
+  newMode = signal<'physical' | 'online'>('physical');   // Added
+  newLink = signal('');                                 // Added
 
-  filters = computed(() => {
-    const l = this.labels();
-    return [
-      { value: 'all'       as MeetingFilter, label: l.filterAll       },
-      { value: 'upcoming'  as MeetingFilter, label: l.filterUpcoming  },
-      { value: 'completed' as MeetingFilter, label: l.filterCompleted },
-    ];
+  creating = signal(false);
+  createError = signal('');
+
+  showCompleteModal = signal(false);
+  completingMeeting = signal<MeetingWithGroup | null>(null);
+  completeNotes = signal('');
+  completing = signal(false);
+
+  showSummaryModal = signal(false);
+  summaryMeeting = signal<MeetingWithGroup | null>(null);
+  showSummaryView = signal(false);
+  viewingSummary = signal<MeetingWithGroup | null>(null);
+  summaryMode = signal<'manual' | 'ai' | null>(null);
+  manualSummary = signal('');
+  selectedAudioFile = signal<File | null>(null);
+  generatingSummary = signal(false);
+  summaryError = signal('');
+
+  openSummaryModal(m: MeetingWithGroup): void {
+    this.summaryMeeting.set(m);
+    this.summaryMode.set(null);
+    this.manualSummary.set('');
+    this.selectedAudioFile.set(null);
+    this.summaryError.set('');
+    this.showSummaryModal.set(true);
+  }
+
+  openSummaryView(m: MeetingWithGroup): void {
+    this.viewingSummary.set(m);
+    this.showSummaryView.set(true);
+  }
+
+  renderMarkdown(text: string): string {
+    return marked(text ?? '') as string;
+  }
+
+  onAudioFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedAudioFile.set(input.files[0]);
+      this.summaryError.set('');
+    }
+  }
+
+  submitManualSummary(): void {
+    const m = this.summaryMeeting();
+    if (!m || !this.manualSummary().trim()) return;
+    this.generatingSummary.set(true);
+    this.meetingsService.saveSummary(m.groupId, m.id, this.manualSummary())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.allMeetings.update(ms => ms.map(x => x.id === m.id ? { ...x, aiSummary: updated.aiSummary, hasAiSummary: true } : x));
+          this.generatingSummary.set(false);
+          this.showSummaryModal.set(false);
+        },
+        error: () => { this.summaryError.set('Error saving summary.'); this.generatingSummary.set(false); }
+      });
+  }
+
+  submitAudioSummary(): void {
+    const m = this.summaryMeeting();
+    const file = this.selectedAudioFile();
+    if (!m || !file) return;
+    this.generatingSummary.set(true);
+    this.summaryError.set('');
+    this.meetingsService.summarizeAudio(m.groupId, m.id, file, this.language())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.allMeetings.update(ms => ms.map(x => x.id === m.id ? { ...x, aiSummary: updated.aiSummary, hasAiSummary: true } : x));
+          this.generatingSummary.set(false);
+          this.showSummaryModal.set(false);
+        },
+        error: () => { this.summaryError.set('Error processing audio.'); this.generatingSummary.set(false); }
+      });
+  }
+
+  readonly currentUserId = computed(() => this.tokenService.getUser()?.id);
+
+  readonly isLeaderOf = computed(() => {
+    const userId = this.currentUserId();
+    return new Set(this.myGroups().filter(g => g.leaderId === userId).map(g => g.id));
   });
 
-  meetings = computed(() => {
+  readonly filteredMeetings = computed(() => {
     const f = this.activeFilter();
-    return MOCK_MEETINGS.filter(m => {
-      if (f === 'upcoming')  return m.status === 'upcoming' || m.status === 'ongoing';
-      if (f === 'completed') return m.status === 'completed' || m.status === 'cancelled';
+    return this.allMeetings().filter(m => {
+      if (f === 'upcoming') return m.status === 'upcoming';
+      if (f === 'completed') return m.status === 'completed';
       return true;
     }).sort((a, b) => {
-      const aUp = a.status === 'upcoming' || a.status === 'ongoing';
-      const bUp = b.status === 'upcoming' || b.status === 'ongoing';
-      if (aUp && !bUp) return -1;
-      if (!aUp && bUp) return 1;
-      return aUp
-        ? a.date.getTime() - b.date.getTime()
-        : b.date.getTime() - a.date.getTime();
+      const aDate = new Date(a.meetingDate ?? a.date ?? '').getTime();
+      const bDate = new Date(b.meetingDate ?? b.date ?? '').getTime();
+      return a.status === 'upcoming' ? aDate - bDate : bDate - aDate;
     });
   });
 
-  title(m: Meeting)    { return this.language() === 'fr' ? m.titleFr : m.titleEn; }
-  location(m: Meeting) { return this.language() === 'fr' ? m.locationFr : m.locationEn; }
+  ngOnInit(): void {
+  this.loading.set(true);
+  this.groupsApiService.getMyGroups().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    next: (groups) => {
+      console.log('Groups loaded:', groups);
+      this.myGroups.set(groups);
+      if (groups.length === 0) { this.loading.set(false); return; }
+      
+      const all: MeetingWithGroup[] = [];
+      let loaded = 0;
+      const total = groups.length;
 
-  statusLabel(s: MeetingStatus): string {
-    const l = this.labels();
-    return ({ upcoming: l.upcoming, ongoing: l.ongoing, completed: l.completed, cancelled: l.cancelled })[s];
+      groups.forEach(group => {
+        console.log('Loading meetings for group:', group.id, group.name);
+        this.meetingsService.getByGroup(group.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: (meetings) => {
+            console.log('Meetings for group', group.name, ':', meetings);
+            meetings.forEach(m => all.push({ ...m, groupName: group.name, groupId: group.id }));
+          },
+          error: (err) => { console.error('Error loading meetings for group', group.name, err); },
+          complete: () => {
+            loaded++;
+            console.log('Completed', loaded, '/', total);
+            if (loaded === total) {
+              console.log('All meetings:', all);
+              this.allMeetings.set([...all]);
+              this.loading.set(false);
+            }
+          }
+        });
+      });
+    },
+    error: (err) => { console.error('Error loading groups:', err); this.loading.set(false); }
+  });
+}
+
+  openCreate(): void {
+    this.showCreateModal.set(true);
+    this.selectedGroupId.set(this.myGroups().find(g => this.isLeaderOf().has(g.id))?.id ?? '');
+    this.newTitle.set('');
+    this.newDate.set('');
+    this.newDuration.set('60');
+    this.newMode.set('physical');      // Added
+    this.newLink.set('');              // Added
+    this.createError.set('');
   }
 
-  formatDate(date: Date): string {
-    const diff = Math.round((date.getTime() - Date.now()) / 86_400_000);
-    const l    = this.labels();
-    if (diff === 0)  return l.today;
-    if (diff === 1)  return l.tomorrow;
-    if (diff === -1) return l.yesterday;
-    return date.toLocaleDateString(
-      this.language() === 'fr' ? 'fr-FR' : 'en-GB',
-      { weekday: 'short', day: 'numeric', month: 'short' }
-    );
+  submitCreate(): void {
+    if (!this.newTitle().trim() || !this.newDate() || !this.selectedGroupId()) {
+      this.createError.set(this.language() === 'fr' ? 'Remplissez tous les champs.' : 'Fill in all fields.');
+      return;
+    }
+    this.creating.set(true);
+    this.meetingsService.create(
+      this.selectedGroupId(), 
+      this.newTitle(), 
+      this.newDate(), 
+      parseInt(this.newDuration()) || undefined,
+      this.newMode(),
+      this.newLink() || undefined
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (meeting) => {
+          const group = this.myGroups().find(g => g.id === this.selectedGroupId());
+          this.allMeetings.update(ms => [{ ...meeting, groupName: group?.name ?? '', groupId: this.selectedGroupId() }, ...ms]);
+          this.creating.set(false);
+          this.showCreateModal.set(false);
+        },
+        error: () => { this.createError.set('Failed to create meeting.'); this.creating.set(false); }
+      });
   }
 
-  formatTime(date: Date): string {
-    return date.toLocaleTimeString(
-      this.language() === 'fr' ? 'fr-FR' : 'en-GB',
-      { hour: '2-digit', minute: '2-digit' }
-    );
+  openComplete(m: MeetingWithGroup): void {
+    this.completingMeeting.set(m);
+    this.completeNotes.set('');
+    this.showCompleteModal.set(true);
   }
 
-  openDetail(id: string) {
-    this.router.navigate(['/app/meetings', id]);
+  submitComplete(): void {
+    const m = this.completingMeeting();
+    if (!m) return;
+    this.completing.set(true);
+    this.meetingsService.complete(m.groupId, m.id, this.completeNotes() || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          const updated = { ...m, status: 'completed' as any, hasAiSummary: false };
+          this.allMeetings.update(ms => ms.map(x => x.id === m.id ? updated : x));
+          this.completing.set(false);
+          this.showCompleteModal.set(false);
+          this.openSummaryModal(updated as MeetingWithGroup);
+        },
+        error: () => { this.completing.set(false); }
+      });
+  }
+
+  formatDate(iso: string): string {
+    if (!iso) return '-';
+    return new Date(iso).toLocaleDateString(this.language() === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  formatTime(iso: string): string {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString(this.language() === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  statusLabel(status: string): string {
+    const map: Record<string, { fr: string; en: string }> = {
+      upcoming: { fr: 'À venir', en: 'Upcoming' },
+      completed: { fr: 'Terminée', en: 'Completed' },
+      cancelled: { fr: 'Annulée', en: 'Cancelled' },
+    };
+    return (this.language() === 'fr' ? map[status]?.fr : map[status]?.en) ?? status;
   }
 }
 

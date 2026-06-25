@@ -15,6 +15,7 @@ import {
   CircleDollarSign,
   Wallet,
   Calendar,
+  User,
   Bell,
   MessageSquare,
   LogIn,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-angular';
 import { Language, LanguageService } from '../../core/services/language.service';
 import { hasStoredToken } from '../../core/services/auth-token';
+import { TokenService } from '../../core/services/token.service';
 
 @Component({
   selector: 'app-nav-bar',
@@ -41,6 +43,28 @@ export class NavBar {
   private readonly location = inject(Location);
 
   language = this.languageService.language;
+  
+  private readonly tokenService = inject(TokenService);
+
+  userInitials = computed(() => {
+    const user = this.tokenService.getUser();
+    if (!user) return '?';
+    if (user.initials) return user.initials;
+    if (user.fullName) return user.fullName.charAt(0).toUpperCase();
+    if (user.phoneNumber) return user.phoneNumber.slice(-2);
+    return '?';
+  });
+
+  // New computeds
+  userName = computed(() => {
+    const user = this.tokenService.getUser();
+    return user?.fullName || (this.language() === 'fr' ? 'Membre' : 'Member');
+  });
+
+  userPhone = computed(() => {
+    const user = this.tokenService.getUser();
+    return user?.phoneNumber ?? '';
+  });
 
   isLoggedIn = computed(() => {
     if (!isPlatformBrowser(this.platformId)) return false;
@@ -56,6 +80,7 @@ export class NavBar {
     CircleDollarSign,
     Wallet,
     Calendar,
+    User,           // Added
     Bell,
     MessageSquare,
     LogIn,
@@ -100,7 +125,9 @@ export class NavBar {
   }
 
   logout(): void {
-    localStorage.removeItem('auth_token'); localStorage.removeItem('pin_token'); localStorage.removeItem('current_user');
+    localStorage.removeItem('auth_token'); 
+    localStorage.removeItem('pin_token'); 
+    localStorage.removeItem('current_user');
     this.closeAll();
     this.router.navigate(['/auth/login']);
   }
@@ -111,8 +138,6 @@ export class NavBar {
 
   showBackButton = computed(() => {
     const url = this.router.url;
-    // Show back button on detail pages (communities/:id, groups/:id, etc.)
     return /\/app\/communities\/[^/]+|\/app\/my-groups\/[^/]+|\/app\/meetings\/[^/]+|groups\/[^/]+/.test(url);
   });
 }
-

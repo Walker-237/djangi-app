@@ -320,3 +320,45 @@ app-top-nav {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
+
+.bn-sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.bn-sheet-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1B3A2D;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bn-sheet-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bn-sheet-user-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B3A2D;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bn-sheet-user-phone {
+  font-size: 13px;
+  color: #6B7280;
+  margin-top: 2px;
+}

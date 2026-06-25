@@ -368,13 +368,14 @@ export class Auth {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (response) => {
-            this.loading.set(false);
-            if (response.isNewUser || !response.user.pinSet) {
-              this.authStep.set('pinSetup');
-              return;
-            }
-            this.router.navigate(['/app/dashboard']);
-          },
+          this.loading.set(false);
+          if (response.isNewUser || !response.user.pinSet) {
+            this.authStep.set('pinSetup');
+            return;
+          }
+          const dest = response.user.role === 'admin' ? '/admin/dashboard' : '/app/dashboard';
+          this.router.navigate([dest]);
+        },
           error: () => this.setError(this.language() === 'fr' ? 'Code OTP invalide.' : 'Invalid OTP code.'),
         });
       return;
@@ -389,7 +390,11 @@ export class Auth {
       this.authService.setPin(this.pin().trim())
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: () => this.router.navigate(['/app/dashboard']),
+          next: () => {
+            const user = this.authService.getCurrentUser();
+            const dest = user?.role === 'admin' ? '/admin/dashboard' : '/app/dashboard';
+            this.router.navigate([dest]);
+          },
           error: () => this.setError(this.language() === 'fr' ? 'Impossible de definir le PIN.' : 'Unable to set PIN.'),
         });
       return;
@@ -404,7 +409,11 @@ export class Auth {
       this.authService.pinLogin(phoneNumber, this.pin().trim())
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: () => this.router.navigate(['/app/dashboard']),
+          next: () => {
+            const user = this.authService.getCurrentUser();
+            const dest = user?.role === 'admin' ? '/admin/dashboard' : '/app/dashboard';
+            this.router.navigate([dest]);
+          },
           error: () => this.setError(this.language() === 'fr' ? 'Numero ou PIN invalide.' : 'Invalid phone or PIN.'),
         });
     }

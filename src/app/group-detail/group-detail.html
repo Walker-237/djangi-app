@@ -7,10 +7,6 @@
         <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
       </button>
 
-      <button type="button" class="gd-dev-toggle" (click)="isMember.update(v => !v)">
-        {{ isMember() ? '👤 Member' : '👁 Guest' }}
-      </button>
-
       <div class="gd-hero-avatar">{{ g.name.charAt(0) }}</div>
       <h1 class="gd-hero-name">{{ g.name }}</h1>
       <p class="gd-hero-freq">{{ frequencyLabel(g.frequency) }}</p>
@@ -91,7 +87,10 @@
             <div class="gd-cycle-avatars">
               @for (member of g.members; track member.id) {
                 <div
-                  class="gd-avatar-bubble gd-avatar--{{ member.status }}"
+                  class="gd-avatar-bubble"
+                  [class.gd-avatar--next]="member.position === nextMember()?.position"
+                  [class.gd-avatar--paid]="member.position < (nextMember()?.position ?? 1)"
+                  [class.gd-avatar--pending]="member.position > (nextMember()?.position ?? 1)"
                   [title]="member.name"
                 >
                   {{ member.initials }}
@@ -130,7 +129,7 @@
         <!-- QUICK ACTIONS -->
         <section class="gd-section">
           <div class="gd-quick-actions">
-            <button type="button" class="gd-qa-btn gd-qa-btn--primary" (click)="openContributions()">
+            <button type="button" class="gd-qa-btn gd-qa-btn--primary" (click)="openPayModal()">
               <div class="gd-qa-icon"><lucide-icon name="wallet" [size]="22"></lucide-icon></div>
               <span>{{ language() === 'fr' ? 'Cotisation' : 'Contribute' }}</span>
             </button>
@@ -185,6 +184,37 @@
           </div>
         </section>
 
+        <!-- PENDING REQUESTS — leader only -->
+        @if (isLeader() && pendingMembers().length > 0) {
+          <section class="gd-section">
+            <div class="gd-section-row">
+              <h2 class="gd-section-title">{{ language() === 'fr' ? 'Demandes en attente' : 'Pending requests' }}</h2>
+              <span class="gd-badge" style="background:#FEF3C7;color:#92400E;">{{ pendingMembers().length }}</span>
+            </div>
+            <div class="gd-members-list">
+              @for (member of pendingMembers(); track member.id) {
+                <div class="gd-member-row" style="gap:10px;">
+                  <div class="gd-member-avatar">{{ member.initials }}</div>
+                  <div class="gd-member-info" style="flex:1;">
+                    <p class="gd-member-name">{{ member.name }}</p>
+                    <span class="gd-status gd-status--pending">{{ language() === 'fr' ? 'En attente' : 'Pending' }}</span>
+                  </div>
+                  <button type="button"
+                    style="padding:6px 12px;background:#1B3A2D;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;"
+                    (click)="approveMember(member.id)">
+                    {{ language() === 'fr' ? 'Accepter' : 'Approve' }}
+                  </button>
+                  <button type="button"
+                    style="padding:6px 12px;background:#FEE2E2;color:#DC2626;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;"
+                    (click)="rejectMember(member.id)">
+                    {{ language() === 'fr' ? 'Refuser' : 'Reject' }}
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
         <!-- ROTATION ORDER -->
         <section class="gd-section">
           <div class="gd-section-row">
@@ -196,7 +226,7 @@
             @for (member of g.members; track member.id) {
               <div
                 class="gd-member-row"
-                [class.gd-member-row--next]="member.status === 'next'"
+                [class.gd-member-row--next]="member.position === nextMember()?.position"
                 [class.gd-member-row--me]="member.id === myMember()?.id"
               >
                 <div class="gd-pos-badge gd-pos--{{ member.status }}">{{ member.position }}</div>
@@ -208,14 +238,14 @@
                       <span class="gd-me-chip">{{ language() === 'fr' ? 'Moi' : 'Me' }}</span>
                     }
                   </p>
-                  <span class="gd-status {{ statusClass(member.status) }}">{{ statusLabel(member.status) }}</span>
+                  <span class="gd-status {{ member.position === nextMember()?.position ? 'gd-status--next' : member.position < (nextMember()?.position ?? 1) ? 'gd-status--paid' : 'gd-status--pending' }}">
+                    {{ member.position === nextMember()?.position ? (language() === 'fr' ? 'Prochain' : 'Next') : member.position < (nextMember()?.position ?? 1) ? (language() === 'fr' ? 'Versé' : 'Paid') : (language() === 'fr' ? 'En attente' : 'Pending') }}
+                  </span>
                 </div>
-                @if (member.status === 'paid') {
+                @if (member.position < (nextMember()?.position ?? 1)) {
                   <lucide-icon name="check-circle" [size]="18" class="gd-received-icon"></lucide-icon>
-                } @else if (member.status === 'next') {
+                } @else if (member.position === nextMember()?.position) {
                   <span class="gd-next-chip">{{ language() === 'fr' ? 'Prochain' : 'Next' }}</span>
-                } @else if (member.status === 'late') {
-                  <lucide-icon name="alert-circle" [size]="18" class="gd-late-icon"></lucide-icon>
                 }
               </div>
             }
@@ -246,9 +276,15 @@
           <p class="gd-member-bar-label">{{ language() === 'fr' ? 'Prochaine cotisation' : 'Next contribution' }}</p>
           <p class="gd-member-bar-value">{{ formatAmount(g.contributionAmount) }} {{ g.currency }} · {{ formatDate(g.nextPayoutDate) }}</p>
         </div>
-        <button type="button" class="gd-pay-btn" (click)="openContributions()">
-          {{ language() === 'fr' ? 'Payer' : 'Pay now' }}
-        </button>
+        @if (myMember()?.status !== 'pending') {
+          <button type="button" class="gd-pay-btn" (click)="openPayModal()">
+            {{ language() === 'fr' ? 'Payer' : 'Pay now' }}
+          </button>
+        } @else {
+          <span style="font-size:13px;color:#6B7280;font-style:italic;">
+            {{ language() === 'fr' ? 'En attente' : 'Awaiting approval' }}
+          </span>
+        }
       </div>
 
     <!-- ════ NON-MEMBER VIEW ════ -->
@@ -309,6 +345,48 @@
       </div>
     }
 
+    <!-- PAYMENT MODAL (moved inside scope) -->
+    @if (showPayModal()) {
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:flex-end;">
+       <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(120px + env(safe-area-inset-bottom));width:100%;max-height:85vh;overflow-y:auto;">
+          <h3 style="font-size:18px;font-weight:700;color:#1B3A2D;margin-bottom:4px;">
+            {{ language() === 'fr' ? 'Payer la cotisation' : 'Pay contribution' }}
+          </h3>
+          <p style="font-size:14px;color:#6B7280;margin-bottom:20px;">
+            {{ formatAmount(g.contributionAmount) }} {{ g.currency }}
+            {{ language() === 'fr' ? 'sera débité de votre portefeuille.' : 'will be deducted from your wallet.' }}
+          </p>
+          @if (payError()) {
+            <p style="color:#DC2626;font-size:13px;margin-bottom:12px;font-weight:600;">{{ payError() }}</p>
+          }
+          <div style="display:flex;gap:10px;">
+            <button type="button"
+              style="flex:1;padding:14px;background:#F3F4F6;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;"
+              (click)="closePayModal()">
+              {{ language() === 'fr' ? 'Annuler' : 'Cancel' }}
+            </button>
+            <button type="button"
+              style="flex:2;padding:14px;background:#1B3A2D;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"
+              (click)="payContribution()" [disabled]="payingContribution()">
+              {{ payingContribution() ? '...' : (language() === 'fr' ? 'Confirmer le paiement' : 'Confirm payment') }}
+            </button>
+          </div>
+          @if (isLeader() && payouts().length > 0) {
+            <div style="margin-top:20px;padding-top:20px;border-top:1px solid #E5E7EB;">
+              <p style="font-size:13px;font-weight:700;color:#1B3A2D;margin-bottom:10px;">
+                {{ language() === 'fr' ? 'Déclencher un versement' : 'Trigger a payout' }}
+              </p>
+              <button type="button"
+                style="width:100%;padding:14px;background:#4A7C59;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"
+                (click)="triggerPayout()" [disabled]="processingPayout()">
+                {{ processingPayout() ? '...' : (language() === 'fr' ? 'Traiter le versement' : 'Process payout') }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
   </div>
 } @else {
   <div class="gd-not-found">
@@ -318,5 +396,3 @@
     <p>{{ language() === 'fr' ? 'Groupe introuvable.' : 'Group not found.' }}</p>
   </div>
 }
-
-

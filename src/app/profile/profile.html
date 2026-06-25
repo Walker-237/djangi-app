@@ -1,21 +1,23 @@
 <section class="prf">
   <header class="prf__header">
     <div>
-      <p class="prf__eyebrow">{{ labels().since }}: {{ labels().memberSince }}</p>
+      <p class="prf__eyebrow">{{ labels().since }}: {{ memberSince() }}</p>
       <h1 class="prf__title">{{ labels().title }}</h1>
       <p class="prf__subtitle">{{ labels().subtitle }}</p>
     </div>
-    <button class="prf__action" type="button" (click)="toggleEditing()">
-      <lucide-icon [name]="editing() ? 'save' : 'pencil'" [size]="18" aria-hidden="true"></lucide-icon>
-      {{ editing() ? labels().save : labels().edit }}
-    </button>
+    @if (!editing()) {
+      <button class="prf__action" type="button" (click)="startEditing()">
+        <lucide-icon name="pencil" [size]="18" aria-hidden="true"></lucide-icon>
+        {{ labels().edit }}
+      </button>
+    }
   </header>
 
   <div class="prf__grid">
     <article class="prf__card prf__identity">
-      <div class="prf__avatar">BK</div>
+      <div class="prf__avatar">{{ initials() }}</div>
       <div class="prf__identity-text">
-        <h2 class="prf__name">{{ name() }}</h2>
+        <h2 class="prf__name">{{ name() || phone() }}</h2>
         <p class="prf__phone">
           <lucide-icon name="phone" [size]="16" aria-hidden="true"></lucide-icon>
           {{ phone() }}
@@ -26,28 +28,49 @@
     <article class="prf__card prf__form">
       <label class="prf__field">
         <span class="prf__label">{{ labels().name }}</span>
-        <input class="prf__input" [value]="name()" (input)="name.set($any($event.target).value)" [disabled]="!editing()" />
+        @if (editing()) {
+          <input class="prf__input" [value]="editName()"
+            (input)="editName.set($any($event.target).value)"
+            [placeholder]="labels().namePlaceholder" />
+        } @else {
+          <input class="prf__input" [value]="name()" disabled />
+        }
+      </label>
+      <label class="prf__field">
+        <span class="prf__label">{{ labels().email }}</span>
+        @if (editing()) {
+          <input class="prf__input" type="email" [value]="editEmail()"
+            (input)="editEmail.set($any($event.target).value)"
+            [placeholder]="labels().emailPlaceholder" />
+        } @else {
+          <input class="prf__input" [value]="email()" disabled />
+        }
       </label>
       <label class="prf__field">
         <span class="prf__label">{{ labels().phone }}</span>
-        <input class="prf__input" [value]="phone()" (input)="phone.set($any($event.target).value)" [disabled]="!editing()" />
+        <input class="prf__input" [value]="phone()" disabled />
       </label>
       <label class="prf__field">
         <span class="prf__label">{{ labels().since }}</span>
-        <input class="prf__input" [value]="labels().memberSince" disabled />
+        <input class="prf__input" [value]="memberSince()" disabled />
       </label>
-    </article>
-  </div>
 
-  <div class="prf__stats">
-    @for (stat of stats; track stat.key) {
-      <article class="prf__stat">
-        <span class="prf__stat-icon">
-          <lucide-icon [name]="stat.icon" [size]="20" aria-hidden="true"></lucide-icon>
-        </span>
-        <span class="prf__stat-label">{{ label(stat.key) }}</span>
-        <strong class="prf__stat-value">{{ stat.value }}</strong>
-      </article>
-    }
+      @if (editing()) {
+        @if (saveError()) {
+          <p style="color:#DC2626;font-size:13px;font-weight:600;margin-top:4px;">{{ saveError() }}</p>
+        }
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <button class="prf__action" type="button" style="background:#F3F4F6;color:#374151;"
+            (click)="cancelEditing()" [disabled]="saving()">
+            {{ labels().cancel }}
+          </button>
+          <button class="prf__action" type="button"
+            (click)="saveProfile()" [disabled]="saving()">
+            <lucide-icon name="save" [size]="18" aria-hidden="true"></lucide-icon>
+            {{ saving() ? labels().saving : labels().save }}
+          </button>
+        </div>
+      }
+    </article>
   </div>
 </section>
